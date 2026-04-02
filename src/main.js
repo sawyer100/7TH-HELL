@@ -1,7 +1,6 @@
-import StartGame from './game/main';
+import StartGame from "./game/main";
+import "./ui";
 
-document.addEventListener('DOMContentLoaded', () => {
-
-    StartGame('game-container');
-
+document.addEventListener("DOMContentLoaded", () => {
+  StartGame("game-container");
 });
