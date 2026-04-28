@@ -5,8 +5,6 @@ import { MainMenu } from "./scenes/MainMenu";
 import { Preloader } from "./scenes/Preloader";
 import { AUTO, Game } from "phaser";
 
-//  Find out more information about the Game Config at:
-//  https://docs.phaser.io/api-documentation/typedef/types-core#gameconfig
 const config = {
   type: AUTO,
   // we're using RESIZE scale mode so, this is jsut the efault width and height, itll auto-change when the game starts dont worry abt this
