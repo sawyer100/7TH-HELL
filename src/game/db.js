@@ -20,12 +20,12 @@ const game_data_store = "game";
 //default settings for new player to be saved
 export const default_game_settings = {
   saveVer: 1,
-  musicVol: 100,
-  sfxVol: 100,
-  dialogueVol: 100,
+  musicVol: 50,
+  sfxVol: 50,
+  dialogueVol: 50,
   brightness: 50,
   contrast: 50,
-  resolution: "auto",
+  resolution: "1600x900",
 };
 
 // default game data for new players
