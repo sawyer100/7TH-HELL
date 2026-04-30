@@ -9,10 +9,6 @@ export class Preloader extends Scene {
   preload() {
     this.load.setPath("assets");
 
-    //CURSOR ICONS
-    this.load.image("cursor-normal", "cursor/mouse.png");
-    this.load.image("cursor-hover", "cursor/pointer.png");
-
     // TITLE SCENE
     // design extraas
     this.load.image("title-line-design", "scenes/title-screen/line-design.png");
