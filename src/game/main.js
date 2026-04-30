@@ -7,6 +7,7 @@ import { AUTO, Game } from "phaser";
 
 const config = {
   type: AUTO,
+  pixelArt: true,
   // we're using RESIZE scale mode so, this is jsut the efault width and height, itll auto-change when the game starts dont worry abt this
   width: 1280,
   height: 720,
