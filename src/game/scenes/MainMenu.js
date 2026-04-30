@@ -88,6 +88,13 @@ export class MainMenu extends Scene {
     super("MainMenu");
   }
 
+  //  PREVENT CUROSR ON MOBILE
+  isAllowedCursor() {
+    const os = this.sys.game.device.os;
+
+    return os.desktop;
+  }
+
   /// make IMg become width pixels wide and scale height relative to it
   fitImageWidth(img, w) {
     const s = w / img.width;
@@ -893,10 +900,12 @@ export class MainMenu extends Scene {
   // CHANGING THE CUSTOM CURSOR ICONS
   // CHANGE THE PATH IN PRELOADER.JS NOT HERE
   hover() {
+    if (!this.allowedCursor || !this.cursor) return;
     this.cursor.setTexture("cursor-hover");
   }
 
   not_hover() {
+    if (!this.allowedCursor || !this.cursor) return;
     this.cursor.setTexture("cursor-normal");
   }
 
@@ -1440,13 +1449,20 @@ export class MainMenu extends Scene {
     this.logo.default_depth = this.logo.depth;
 
     // CURSOR NORMAL
-    this.cursor = this.add.image(0, 0, "cursor-normal");
-    this.cursor.setOrigin(0, 0);
+    this.allowedCursor = this.isAllowedCursor();
+    if (this.allowedCursor) {
+      this.input.setDefaultCursor("none");
 
-    this.cursor.setScrollFactor(0);
-
-    // z indxe
-    this.cursor.setDepth(9999);
+      this.cursor = this.add;
+      this.cursor.image(0, 0, "cursor-normal");
+      this.cursor.setOrigin(0, 0);
+      this.cursor.setDepth(depth.cursor);
+      this.cursor.setScrollFactor(0);
+    } else {
+      // mobile or somethig that no cursor
+      this.input.setDefaultCursor("default");
+      this.cursor = null;
+    }
 
     // BUTTON EVENTS
     this.btn_click_and_hover(this.playBtns_Pack, () =>
@@ -1507,6 +1523,8 @@ export class MainMenu extends Scene {
   // HOPEFULY THIS IS NOT MEMORY INTESNIVE I DONT KNOW
   //TODO: add fps limit maybe later MAYBE
   update() {
+    if (!this.allowedCursor || !this.cursor) return;
+
     const pointer = this.input.activePointer;
     this.cursor.setPosition(pointer.x, pointer.y);
   }
