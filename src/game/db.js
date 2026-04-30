@@ -7,8 +7,8 @@ const playable_characters = {
     displayName: "Kim",
     defaultHealth: 80,
   },
-  meryl: {
-    displayName: "Meryl",
+  maryl: {
+    displayName: "Maryl",
     defaultHealth: 80,
   },
 };
