@@ -37,13 +37,13 @@ const el_pos = {
   // credits page
   credits: {
     title: { x: 80, y: 180, font: 45 },
-    logo: { x: 240, y: 396, w: 304, h: 304 },
+    logo: { x: 240, y: 420, w: 310, h: 310 },
     col1: { x: 544, y: 270 },
     col2: { x: 1008, y: 270 },
-    cred_role_font: 16,
-    cred_font: 15,
-    cred_line_gap: 40,
-    credit_gap: 80,
+    cred_role_font: 17,
+    cred_font: 14,
+    cred_line_gap: 35,
+    credit_gap: 100,
   },
 
   // smooth radial underneath the pixel alarm forr extra effect

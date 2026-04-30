@@ -42,9 +42,9 @@ export class Preloader extends Scene {
       "page-overlay-pattern",
       "scenes/title-screen/color-pattern.png",
     );
-    this.load.image(
+    this.load.svg(
       "credits-page-logo",
-      "scenes/title-screen/team-logo.png",
+      "scenes/title-screen/team-logo.svg",
     );
   }
 
