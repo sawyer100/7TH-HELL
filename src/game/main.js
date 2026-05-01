@@ -1,32 +1,30 @@
-import { Boot } from "./scenes/Boot";
-import { Game as MainGame } from "./scenes/Game";
-import { GameOver } from "./scenes/GameOver";
-import { MainMenu } from "./scenes/MainMenu";
+import Phaser from "phaser";
 import { Preloader } from "./scenes/Preloader";
-import { AUTO, Game } from "phaser";
+import { MainMenu } from "./scenes/MainMenu";
 
-//  Find out more information about the Game Config at:
-//  https://docs.phaser.io/api-documentation/typedef/types-core#gameconfig
-const config = {
-  type: AUTO,
-  // we're using RESIZE scale mode so, this is jsut the efault width and height, itll auto-change when the game starts dont worry abt this
-  width: 1280,
-  height: 720,
-  parent: "game-container",
-  backgroundColor: "#000000",
-  scale: {
-    //automatically size to the entire screen
-    mode: Phaser.Scale.RESIZE,
-    //centers hegith and width
-    autoCenter: Phaser.Scale.CENTER_BOTH,
-  },
+const GAME_WIDTH = 1600;
+const GAME_HEIGHT = 900;
 
-  // to make a scene playable, import the scene's .js file and put it in here
-  scene: [Boot, Preloader, MainMenu, MainGame, GameOver],
-};
+export default function StartGame(parent) {
+  return new Phaser.Game({
+    type: Phaser.AUTO,
+    parent,
 
-const StartGame = (parent) => {
-  return new Game({ ...config, parent });
-};
+    backgroundColor: "#000000",
 
-export default StartGame;
+    scale: {
+      parent,
+      mode: Phaser.Scale.FIT,
+      autoCenter: Phaser.Scale.CENTER_BOTH,
+      width: GAME_WIDTH,
+      height: GAME_HEIGHT,
+    },
+
+    render: {
+      pixelArt: true,
+      antialias: false,
+    },
+
+    scene: [Preloader, MainMenu],
+  });
+}

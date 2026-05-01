@@ -1,19 +1,19 @@
 {
-    "name": "template-vite",
-    "description": "A Phaser 3 template using Vite.",
+    "name": "7th-hell",
+    "description": "IDSP Project.",
     "version": "1.4.0",
     "type": "module",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/phaserjs/template-vite.git"
+        "url": "git+https://github.com/sawyer100/7th-hell.git"
     },
-    "author": "Phaser Studio <support@phaser.io> (https://phaser.io/)",
+    "author": "Sawyer100 and 7TH-HELL Designer Team",
     "license": "MIT",
     "licenseUrl": "http://www.opensource.org/licenses/mit-license.php",
     "bugs": {
-        "url": "https://github.com/phaserjs/template-vite/issues"
+        "url": "https://github.com/sawyer100/7th-hell/issues"
     },
-    "homepage": "https://github.com/phaserjs/template-vite#readme",
+    "homepage": "https://github.com/sawyer100/7th-hell",
     "scripts": {
         "dev": "node log.js dev & vite --config vite/config.dev.mjs",
         "build": "vite build --config vite/config.prod.mjs",
@@ -21,13 +21,11 @@
         "build-nolog": "vite build --config vite/config.prod.mjs"
     },
     "devDependencies": {
-        "@vitejs/plugin-react": "^4.3.4",
         "terser": "^5.46.1",
         "vite": "^6.3.1"
     },
     "dependencies": {
-        "phaser": "^3.90.0",
-        "react": "^19.2.4",
-        "react-dom": "^19.2.4"
+        "dotenv": "^17.4.2",
+        "phaser": "^3.90.0"
     }
 }
