@@ -1,4 +1,5 @@
 import Phaser, { Scene } from "phaser";
+import { default_game_settings, loadSettings, saveSettings } from "../db";
 
 // change image names / keys inside Preloader.js
 
@@ -6,13 +7,57 @@ import Phaser, { Scene } from "phaser";
 const main_width = 1600;
 const main_height = 900;
 
+// RESOLUTOIN OPTIONS FOR SETTINGS
+function getRes(res) {
+  //TODO: make it check to see if "res" is vaalid, but i dont know how to do it without writing a lot of code
+
+  // if ()
+  let w = 1600;
+
+  let h = 900;
+
+  if (res === "960x540") {
+    w = 960;
+    h = 540;
+  } else if (res === "1280x720") {
+    w = 1280;
+    h = 720;
+  } else if (res === "1920x1080") {
+    w = 1920;
+    h = 1080;
+  }
+
+  return { label: res, w: w, h: h };
+}
+
+function wholeAndClamp(v) {
+  // make a whole number
+  var n = parseInt(v);
+
+  // i dont know if !typeof number and isNaN does the same thing, but just in case
+  if (!(typeof n === "number")) {
+    return 50;
+  }
+  if (isNaN(n)) {
+    return 50;
+  }
+
+  if (n < 0) {
+    n = 0;
+  }
+
+  if (n > 100) {
+    n = 100;
+  }
+
+  return n;
+}
+
 ///
 // CONFIG AND ELEMENT POSITIONING
 //
 
-// 1600 by 900 mockup coords (no responsive)
-// el_pos is the position for an internal game NOT THE POSITION OF THE BROWSER
-// scale.FIT in main.js handles rescaling
+//!! EDIT SIZE AND WDITH AND POSITOINNIG ALL HERE
 const el_pos = {
   logo: { x: 480, y: 342, w: 768, introOffsetY: 45 },
 
@@ -46,6 +91,23 @@ const el_pos = {
     credit_gap: 100,
   },
 
+  // SETTINGS
+  settings: {
+    title: { x: 80, y: 180, font: 45 },
+    labelX: 112,
+    controlX: 650,
+    valueX: 855,
+    startY: 290,
+    row_gap: 62,
+    sliderW: 360,
+
+    buttons: {
+      cancel: { x: 300, y: 735, w: 300, h: 78, font: 13 },
+      save: { x: 620, y: 735, w: 300, h: 78, font: 13 },
+      defaults: { x: 940, y: 735, w: 300, h: 78, font: 13 },
+    },
+  },
+
   // smooth radial underneath the pixel alarm forr extra effect
   alarm: {
     x: 1568,
@@ -58,9 +120,7 @@ const el_pos = {
   },
 };
 
-// this is basiclaly like Z index depth = z index
-// PURPOSE IS SO WE DONT HAVE TO GO THROUGH HUNDREDS OF LINES OF CODE TO CHANGE Z INDEX
-// DO IT ALL HERE
+// CHANGE Z INDEX ALL HERE
 const depth = {
   bg: -10,
   hallway: 1,
@@ -77,7 +137,8 @@ const depth = {
   page_txt: 12,
   border: 100,
   extra_line: 101,
-  cursor: 9999,
+  settings_ui: 14,
+  settings_dropdown: 30,
 };
 
 ///
@@ -86,13 +147,6 @@ const depth = {
 export class MainMenu extends Scene {
   constructor() {
     super("MainMenu");
-  }
-
-  //  PREVENT CUROSR ON MOBILE
-  isAllowedCursor() {
-    const os = this.sys.game.device.os;
-
-    return os.desktop;
   }
 
   /// make IMg become width pixels wide and scale height relative to it
@@ -133,9 +187,9 @@ export class MainMenu extends Scene {
     // flashing animation for smooth radial glow
     this.t_alarm_smooth = this.tweens.add({
       targets: this.alarm_glow_smooth,
-      alpha: { from: 0.4, to: 0.6 },
-      scaleX: { from: sbase * 1, to: sbase * 1.17 },
-      scaleY: { from: sbase * 1, to: sbase * 1.17 },
+      alpha: { from: 0.4, to: 0.65 },
+      scaleX: { from: sbase * 1, to: sbase * 1.18 },
+      scaleY: { from: sbase * 1, to: sbase * 1.18 },
       duration: 1300,
       yoyo: true, // tween backward too
       repeat: -1,
@@ -205,7 +259,7 @@ export class MainMenu extends Scene {
     this.freshTween();
   }
 
-  // create's buttons with the "n" label so we dont need to manually create
+  // create's buttons with the "n" label so we dont need to manually like 9 buttons
   makeButtons(n) {
     // the green button background
     const hover = this.add.image(0, 0, "title-button-bg-hover");
@@ -343,12 +397,19 @@ export class MainMenu extends Scene {
   bringBtnSetIn(btp, delay = 0) {
     let ty;
 
-    if (btp.targetY !== undefined) {
-      if (btp.targetY !== null) {
-        ty = btp.targetY;
-      } else {
-        ty = btp.bg.y;
-      }
+    // if (btp.targetY !== undefined) {
+    //   if (btp.targetY !== null) {
+    //     ty = btp.targetY;
+    //   } else {
+    //     ty = btp.bg.y;
+    //   }
+    // } else {
+    //   ty = btp.bg.y;
+    // }
+
+    // i think this is the same as the code above hopefuly it works?
+    if (btp.targetY !== undefined && btp.targetY !== null) {
+      ty = btp.targetY;
     } else {
       ty = btp.bg.y;
     }
@@ -565,6 +626,11 @@ export class MainMenu extends Scene {
       this.abtBtns_Pack,
       this.returnBtns_Pack,
       this.credBtns_Pack,
+      //settings
+      //!! remove if broken idk test
+      this.settingsCancelBtns_Pack,
+      this.settingsSaveBtns_Pack,
+      this.settingsDefaultBtns_Pack,
     ];
   }
 
@@ -744,10 +810,14 @@ export class MainMenu extends Scene {
       }
     });
 
+    //allow interaction when using settings page
+    this.makeSettingOpsInteracteable(false);
+
     return true;
   }
 
   endPageTrans(delay) {
+    const ps = this.pageState;
     if (!delay) {
       delay = 500;
     }
@@ -767,6 +837,10 @@ export class MainMenu extends Scene {
           }
         }
       });
+
+      if (ps === "settings") {
+        this.makeSettingOpsInteracteable(true);
+      }
 
       this.resBtnHoverStates();
     });
@@ -798,9 +872,23 @@ export class MainMenu extends Scene {
     const a = 220;
     const b = 260;
 
+    // hide settings butons intially
+    this.setBtn_PackVisible(this.settingsCancelBtns_Pack, false);
+    this.setBtn_PackVisible(this.settingsSaveBtns_Pack, false);
+    this.setBtn_PackVisible(this.settingsDefaultBtns_Pack, false);
+
     // hide not-title things
     this.fadeOut(this.about_objs, a);
     this.fadeOut(this.credits_objs, a);
+
+    this.closeResOptionMenu();
+
+    //settigns
+    this.fadeOut(this.settings_objs, a);
+    //TODO: MAKE THEM FADE OUT FASTER I DONT KNOW WHY THESE STILL LINGER AFTER
+    this.bringBtnSetOut(this.settingsCancelBtns_Pack);
+    this.bringBtnSetOut(this.settingsSaveBtns_Pack);
+    this.bringBtnSetOut(this.settingsDefaultBtns_Pack);
 
     this.bringBtnSetOut(this.returnBtns_Pack);
 
@@ -854,6 +942,15 @@ export class MainMenu extends Scene {
 
     this.bringBtnSetOut(this.abtBtns_Pack, 80);
 
+    // TECNICALLY YOU DONT NEED THIS
+    // BECAUSE TO GET TO CREDITS, YOU NEED TO GO THROUGH TITLE, AND IF YOU ARE IN SETTINGS, YOU MUST GO TO TITLE BEFORE GOING TO CREDITS
+    // BUT I WILL ADD IT ANYWAY JSTU INCASE
+    this.closeResOptionMenu();
+    this.fadeOut(this.settings_objs, 120);
+    this.bringBtnSetOut(this.settingsCancelBtns_Pack);
+    this.bringBtnSetOut(this.settingsSaveBtns_Pack);
+    this.bringBtnSetOut(this.settingsDefaultBtns_Pack);
+
     // ADD ASTMOPHERIC OVERLAY
     this.fadeIn(this.overlayObjects, d, 80);
     this.fadeIn(this.about_objs, d, 140);
@@ -871,6 +968,12 @@ export class MainMenu extends Scene {
   showCreditsPage() {
     if (!this.startPageTrans("credits")) return;
     this.pageState = "credits";
+    // same reaosning the about page, tehcnically dont need this
+    this.closeResOptionMenu();
+    this.fadeOut(this.settings_objs, 120);
+    this.bringBtnSetOut(this.settingsCancelBtns_Pack);
+    this.bringBtnSetOut(this.settingsSaveBtns_Pack);
+    this.bringBtnSetOut(this.settingsDefaultBtns_Pack);
 
     // to get to credits, u need to go alarm -> credits
     this.fadeOut(this.about_objs, 180);
@@ -896,17 +999,596 @@ export class MainMenu extends Scene {
 
     this.endPageTrans(500);
   }
+  // SETTINGS PAGE
+  cleanSettings(data) {
+    // exist
+    if (!data) {
+      data = {};
+    }
+
+    const d = default_game_settings;
+
+    // if incorrect settings
+    // shoudl be defualt by default and change later if the settings are coiorect values
+    let music = d.musicVol;
+    let sfx = d.sfxVol;
+
+    let dialogue = d.dialogueVol;
+    let bright = d.brightness;
+    let cont = d.contrast;
+    let res = d.resolution;
+
+    if (!(data.musicVol === undefined)) {
+      music = data.musicVol;
+    }
+
+    if (!(data.sfxVol === undefined)) {
+      sfx = data.sfxVol;
+    }
+
+    if (!(data.dialogueVol === undefined)) {
+      dialogue = data.dialogueVol;
+    }
+
+    if (!(data.brightness === undefined)) {
+      bright = data.brightness;
+    }
+
+    if (!(data.contrast === undefined)) {
+      cont = data.contrast;
+    }
+
+    if (!(data.resolution === undefined)) {
+      res = data.resolution;
+    }
+
+    return {
+      musicVol: wholeAndClamp(music),
+      sfxVol: wholeAndClamp(sfx),
+      dialogueVol: wholeAndClamp(dialogue),
+      brightness: wholeAndClamp(bright),
+      contrast: wholeAndClamp(cont),
+      resolution: getRes(res).label,
+    };
+  }
+
+  async loadApplySetts() {
+    try {
+      const loaded = await loadSettings();
+      // window.alert("done")
+      this.savedSettings = this.cleanSettings(loaded);
+      this.settsDraft = { ...this.savedSettings };
+      this.updateSettCtrls();
+      this.changeSettingsCurrently(this.savedSettings);
+    } catch (err) {
+      // THE DB.JS WILL PUT A CARD (in index.html) THAT SAYS IF DATABSE FAILED TO READ/LOAD SO WE DONT NEED TO DO ANY ERROR MESSAGE HERE REALLY
+      // use defaults
+      this.savedSettings = this.cleanSettings(default_game_settings);
+      this.settsDraft = { ...this.savedSettings };
+      this.updateSettCtrls();
+      this.changeSettingsCurrently(this.savedSettings);
+      console.log(default_game_settings);
+      // console.log("weruwor")
+    }
+  }
+
+  putFilterScreen(brightness, contrast) {
+    // 50 = normal.
+    // 0 = low
+    // 100 = high like high on drug
+
+    const canvas = this.sys.game.canvas;
+
+    const a = wholeAndClamp(brightness);
+
+    const b = wholeAndClamp(contrast);
+    const c = a / 100;
+    const d = b / 100;
+    const bright = 0.5 + c;
+
+    const cont = 0.5 + d;
+
+    if (canvas) {
+      canvas.style.filter = `brightness(${bright}) contrast(${cont})`;
+    } else {
+      console.log("no canvas??");
+      return;
+    }
+  }
+
+  newResolution(value) {
+    const option = getRes(value); // if what the user wants to change to actually is allowed
+
+    if (option) {
+      if (this.scale.setGameSize) {
+        this.scale.setGameSize(option.w, option.h);
+      } else {
+        this.scale.resize(option.w, option.h);
+      }
+
+      //TODO: not working and zoom properly, fix this later, dont know how though
+      const zoom = option.w / main_width;
+      this.cameras.main.setViewport(0, 0, option.w, option.h);
+      this.cameras.main.setZoom(zoom);
+      this.cameras.main.setScroll(0, 0);
+    } else {
+      return;
+    }
+  }
+
+  changeSettingsCurrently(settings) {
+    const newset = this.cleanSettings(settings);
+
+    this.putFilterScreen(newset.brightness, newset.contrast);
+    this.newResolution(newset.resolution);
+  }
+
+  async saveNewSetts() {
+    const final = this.cleanSettings(this.settsDraft);
+
+    try {
+      const saved = await saveSettings(final);
+      this.savedSettings = this.cleanSettings(saved);
+      this.settsDraft = { ...this.savedSettings };
+      this.updateSettCtrls();
+      this.changeSettingsCurrently(this.savedSettings);
+    } catch (err) {
+      console.log("errror savign settings");
+      console.log(err);
+      // return;
+    }
+
+    // return to title page
+    this.showTitlePage();
+  }
+
+  dontSaveNewSetts() {
+    this.settsDraft = { ...this.savedSettings };
+    this.updateSettCtrls();
+    this.closeResOptionMenu();
+    this.showTitlePage();
+    // window.alert('welrkwjhrw')
+    // console.log(this.settsDraft)
+  }
+
+  settingReset() {
+    this.settsDraft = this.cleanSettings(default_game_settings);
+    this.updateSettCtrls();
+    this.closeResOptionMenu();
+  }
+
+  showSettingsPage() {
+    if (this.startPageTrans("settings")) {
+      this.pageState = "settings";
+      // take out alarm temp
+      this.activeAlarm(false);
+
+      const d = 260;
+
+      this.tweens.killTweensOf(this.logo);
+
+      this.tweens.add({
+        targets: this.logo,
+        alpha: 0,
+        duration: 180,
+        ease: "Cubic.In",
+        onComplete: () => this.makeVisible_Zindex(this.logo, false),
+      });
+
+      this.bringBtnSetOut(this.playBtns_Pack);
+
+      this.bringBtnSetOut(this.settBtns_Pack, 40);
+
+      this.bringBtnSetOut(this.abtBtns_Pack, 80);
+      this.bringBtnSetOut(this.returnBtns_Pack);
+
+      //fade credits
+      this.fadeOut(this.credits_objs, 120);
+
+      this.bringBtnSetOut(this.credBtns_Pack);
+
+      this.fadeOut(this.about_objs, 120);
+
+      this.fadeIn(this.overlayObjects, d, 80);
+      //birng in settings els
+      this.fadeIn(this.settings_objs, d, 140);
+
+      // bring in settigns butotns
+      this.bringBtnSetIn(this.settingsCancelBtns_Pack, 180);
+
+      this.bringBtnSetIn(this.settingsSaveBtns_Pack, 220);
+      this.bringBtnSetIn(this.settingsDefaultBtns_Pack, 260);
+
+      this.endPageTrans(650);
+    } else {
+      return;
+    }
+  }
+
+  makeSettingsSlider(label, k, y) {
+    const p = el_pos.settings;
+
+    //slider
+    const sliderW = p.sliderW;
+
+    const sliderH = 12;
+
+    const left = p.controlX - sliderW / 2;
+
+    ///label
+    const label_text = this.add.text(p.labelX, y, label, {
+      fontFamily: "Dogica",
+      fontSize: `17px`,
+      color: "#ffffff",
+      stroke: "#000000",
+      strokeThickness: 5,
+    });
+
+    label_text.setOrigin(0, 0.5);
+
+    label_text.setDepth(depth.settings_ui);
+    label_text.setVisible(false);
+
+    label_text.setAlpha(0);
+
+    //ths is the line that yuo slide the slider across
+    const sliderLine = this.add.rectangle(
+      p.controlX,
+      y,
+      sliderW,
+      sliderH,
+      0x461919,
+    );
+
+    sliderLine.setOrigin(0.5);
+    sliderLine.setDepth(depth.settings_ui);
+
+    const fill = this.add.rectangle(left, y, sliderW / 2, sliderH, 0x8a3434);
+    const slider_btn = this.add.circle(left + sliderW / 2, y, 14, 0xffffff);
+
+    sliderLine.setAlpha(0);
+
+    sliderLine.setVisible(false);
+
+    slider_btn.setVisible(false);
+    fill.setVisible(false);
+    slider_btn.setAlpha(0);
+
+    fill.setOrigin(0, 0.5);
+
+    fill.setAlpha(0);
+
+    fill.setDepth(depth.settings_ui + 1);
+    slider_btn.setDepth(depth.settings_ui + 2);
+
+    const val_text = this.add.text(p.valueX, y, "50%", {
+      fontFamily: "DogicaBold",
+      fontSize: "15px",
+      color: "#ffffff",
+      stroke: "#000000",
+      strokeThickness: 5,
+    });
+
+    // THE NUMBER INDACTOR OF % PERCANTAGE OF SLIDER
+    val_text.setOrigin(0, 0.5);
+    val_text.setDepth(depth.settings_ui);
+
+    val_text.setVisible(false);
+
+    val_text.setAlpha(0);
+
+    // DETECTING IF USER MOUSE IN THIS AREA FOR MOVING SLIDER
+    const zone = this.add.zone(p.controlX, y, sliderW + 42, 46);
+    zone.setOrigin(0.5);
+
+    //top above everything else
+    zone.setDepth(depth.settings_ui + 3);
+    zone.setVisible(false);
+
+    zone.disableInteractive();
+
+    const updateVisual = () => {
+      // between 0 and 100
+      const value = wholeAndClamp(this.settsDraft[k]);
+
+      //horoizintoal position of slider/obs
+      const px = left + (value / 100) * sliderW;
+
+      //width of filled part of slider bar + 1 pixel wide so  visible
+      const tw = (value / 100) * sliderW; //decimal %
+      if (tw < 1) {
+        fill.width = 1; // MUST BE 1 PIXEL AT LEAST
+      } else {
+        fill.width = tw;
+      }
+
+      slider_btn.setPosition(px, y);
+
+      //show the percetange of slider sett
+      val_text.setText(`${value}%`);
+    };
+
+    zone.on("pointerdown", (pointer) => {
+      // dont work during transitions
+      if (this.middleOfTrans) return;
+
+      const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+      let value = ((worldPoint.x - left) / sliderW) * 100;
+
+      this.settsDraft[k] = wholeAndClamp(value);
+      updateVisual();
+    });
+
+    zone.on("pointermove", (pointer) => {
+      // dont work during transitions
+      if (this.middleOfTrans) return;
+
+      if (pointer.isDown) {
+        const worldPoint = this.cameras.main.getWorldPoint(
+          pointer.x,
+          pointer.y,
+        );
+        let value = ((worldPoint.x - left) / sliderW) * 100;
+
+        this.settsDraft[k] = wholeAndClamp(value);
+        updateVisual();
+      }
+    });
+
+    zone.on("pointerover", () => {
+      if (this.middleOfTrans) {
+        return;
+      } else {
+        this.hover();
+      }
+    });
+
+    zone.on("pointerout", () => {
+      if (this.middleOfTrans) {
+        return;
+      } else {
+        this.not_hover();
+      }
+    });
+
+    const objs = [label_text, sliderLine, fill, slider_btn, val_text, zone];
+
+    return {
+      k,
+      objs,
+      updateVisual,
+      enable() {
+        zone.setInteractive({ useHandCursor: false });
+      },
+      disable() {
+        zone.disableInteractive();
+      },
+    };
+  }
+
+  makeSettingsResolutionDropdown(y) {
+    const p = el_pos.settings;
+    const boxW = 360;
+    const boxH = 52;
+
+    const label_text = this.add.text(p.labelX, y, "Resolution", {
+      fontFamily: "Dogica",
+      fontSize: `17px`,
+      color: "#ffffff",
+      stroke: "#000000",
+      strokeThickness: 5,
+    });
+
+    label_text.setOrigin(0, 0.5);
+
+    //zindex
+    label_text.setDepth(depth.settings_ui);
+    label_text.setVisible(false);
+
+    label_text.setAlpha(0);
+
+    const box = this.add.rectangle(p.controlX, y, boxW, boxH, 0x461919);
+    box.setOrigin(0.5);
+    box.setDepth(depth.settings_ui);
+    box.setVisible(false);
+    box.setAlpha(0);
+
+    const selectedText = this.add.text(p.controlX - boxW / 2 + 20, y, "", {
+      fontFamily: "DogicaBold",
+      fontSize: "14px",
+      color: "#ffffff",
+      stroke: "#000000",
+      strokeThickness: 5,
+    });
+    selectedText.setOrigin(0, 0.5);
+    selectedText.setDepth(depth.settings_ui + 1);
+    selectedText.setVisible(false);
+    selectedText.setAlpha(0);
+
+    const arrowText = this.add.text(p.controlX + boxW / 2 - 38, y, "v", {
+      fontFamily: "DogicaBold",
+      fontSize: "14px",
+      color: "#ffffff",
+      stroke: "#000000",
+      strokeThickness: 5,
+    });
+    arrowText.setOrigin(0.5);
+    arrowText.setDepth(depth.settings_ui + 1);
+    arrowText.setVisible(false);
+    arrowText.setAlpha(0);
+
+    const zone = this.add.zone(p.controlX, y, boxW, boxH);
+    zone.setOrigin(0.5);
+    zone.setDepth(depth.settings_ui + 2);
+    zone.setVisible(false);
+    zone.disableInteractive();
+
+    this.settingsResolutionDropdownOpen = false;
+    this.settingsResolutionDropdownObjs = [];
+
+    const updateVisual = () => {
+      const option = getRes(this.settsDraft.resolution);
+      selectedText.setText(option.label);
+    };
+
+    zone.on("pointerdown", () => {
+      if (this.middleOfTrans) return;
+      this.toggleResOptionMenu();
+    });
+
+    zone.on("pointerover", () => {
+      if (this.middleOfTrans) return;
+      this.hover();
+    });
+
+    zone.on("pointerout", () => {
+      if (this.middleOfTrans) return;
+      this.not_hover();
+    });
+
+    const makeResRow = (res, index) => {
+      const option = getRes(res);
+      const rowY = y + boxH + index * boxH;
+
+      const rowBg = this.add.rectangle(p.controlX, rowY, boxW, boxH, 0x2a1010);
+      rowBg.setOrigin(0.5);
+      rowBg.setDepth(depth.settings_dropdown);
+      rowBg.setVisible(false);
+      rowBg.setAlpha(0);
+
+      const rowText = this.add.text(
+        p.controlX - boxW / 2 + 20,
+        rowY,
+        option.label,
+        {
+          fontFamily: "DogicaBold",
+          fontSize: "14px",
+          color: "#ffffff",
+          stroke: "#000000",
+          strokeThickness: 5,
+        },
+      );
+      rowText.setOrigin(0, 0.5);
+      rowText.setDepth(depth.settings_dropdown + 1);
+      rowText.setVisible(false);
+      rowText.setAlpha(0);
+
+      const rowZone = this.add.zone(p.controlX, rowY, boxW, boxH);
+      rowZone.setOrigin(0.5);
+      rowZone.setDepth(depth.settings_dropdown + 2);
+      rowZone.setVisible(false);
+      rowZone.disableInteractive();
+
+      rowZone.on("pointerdown", () => {
+        if (this.middleOfTrans) return;
+
+        this.settsDraft.resolution = option.label;
+        updateVisual();
+        this.closeResOptionMenu();
+      });
+
+      rowZone.on("pointerover", () => {
+        if (this.middleOfTrans) return;
+        this.hover();
+      });
+
+      rowZone.on("pointerout", () => {
+        if (this.middleOfTrans) return;
+        this.not_hover();
+      });
+
+      this.settingsResolutionDropdownObjs.push(rowBg, rowText, rowZone);
+    };
+
+    makeResRow("960x540", 0);
+    makeResRow("1280x720", 1);
+    makeResRow("1600x900", 2);
+    makeResRow("1920x1080", 3);
+
+    const objs = [label_text, box, selectedText, arrowText, zone];
+
+    return {
+      objs,
+      updateVisual,
+      enable() {
+        zone.setInteractive({ useHandCursor: false });
+      },
+      disable() {
+        zone.disableInteractive();
+      },
+    };
+  }
+
+  toggleResOptionMenu() {
+    if (this.settingsResolutionDropdownOpen) {
+      this.closeResOptionMenu();
+    } else {
+      this.openResOptionMenu();
+    }
+  }
+
+  openResOptionMenu() {
+    this.settingsResolutionDropdownOpen = true;
+
+    this.settingsResolutionDropdownObjs.forEach((obj) => {
+      obj.setVisible(true);
+      obj.setAlpha(1);
+
+      if (obj.type === "Zone") {
+        obj.setInteractive({ useHandCursor: false });
+      }
+    });
+  }
+
+  closeResOptionMenu() {
+    this.settingsResolutionDropdownOpen = false;
+
+    if (!this.settingsResolutionDropdownObjs) return;
+
+    this.settingsResolutionDropdownObjs.forEach((obj) => {
+      obj.setVisible(false);
+      obj.setAlpha(0);
+
+      if (obj.type === "Zone") {
+        obj.disableInteractive();
+      }
+    });
+  }
+
+  makeSettingOpsInteracteable(enabled) {
+    if (!this.settingsControls) return;
+
+    this.settingsControls.forEach((control) => {
+      if (enabled) {
+        control.enable();
+      } else {
+        control.disable();
+      }
+    });
+
+    if (!enabled) {
+      this.closeResOptionMenu();
+    }
+  }
+
+  updateSettCtrls() {
+    if (!this.settingsControls) return;
+
+    this.settsDraft = this.cleanSettings(this.settsDraft);
+
+    this.settingsControls.forEach((control) => {
+      if (control.updateVisual) control.updateVisual();
+    });
+  }
 
   // CHANGING THE CUSTOM CURSOR ICONS
   // CHANGE THE PATH IN PRELOADER.JS NOT HERE
   hover() {
-    if (!this.allowedCursor || !this.cursor) return;
-    this.cursor.setTexture("cursor-hover");
+    this.input.setDefaultCursor("pointer");
   }
 
   not_hover() {
-    if (!this.allowedCursor || !this.cursor) return;
-    this.cursor.setTexture("cursor-normal");
+    this.input.setDefaultCursor("default");
   }
 
   // =---------------
@@ -923,12 +1605,13 @@ export class MainMenu extends Scene {
     const aboutbodytext = `normal school day hanging out w/ friends. u find a note in ur locker, telling u to meet somewhere. U pull up to the place and Judson is waiting, u dont rlly know the guy that much, just the rumors around him and hes in ur bio class.\n\nJudson confesses that hes liked u since freshman year and wants to take u out. U calmly reject him calmly, but calmly, he's strangely calm about it. Something isnt right. \n\nHow will he react to ur rejection? Will u escape him?`;
     // ALL THE TEXT ON THE SCENE
     // ALL THE TEXT ON THE SCENE
+    // !!not all the text on the scene but the most important text at least
     // -------------------
 
     this.pageState = "title"; // default page on startup
     this.middleOfTrans = false;
 
-    this.input.setDefaultCursor("none");
+    this.input.setDefaultCursor("default");
 
     //backgorund black
     this.bg = this.add.rectangle(0, 0, main_width, main_height, 0x000000);
@@ -1094,6 +1777,43 @@ export class MainMenu extends Scene {
       el_pos.title_buttons.about.w,
       el_pos.title_buttons.about.h,
       el_pos.title_buttons.about.font,
+    );
+
+    // SETTINGS BUTTONS
+    this.settingsCancelBtns_Pack = this.makeButtons("CANCEL");
+    this.settingsSaveBtns_Pack = this.makeButtons("SAVE");
+    this.settingsDefaultBtns_Pack = this.makeButtons("DEFAULT");
+
+    // hide
+    this.setBtn_PackVisible(this.settingsCancelBtns_Pack, false);
+    this.setBtn_PackVisible(this.settingsSaveBtns_Pack, false);
+    this.setBtn_PackVisible(this.settingsDefaultBtns_Pack, false);
+
+    this.layoutButton(
+      this.settingsCancelBtns_Pack,
+      el_pos.settings.buttons.cancel.x,
+      el_pos.settings.buttons.cancel.y,
+      el_pos.settings.buttons.cancel.w,
+      el_pos.settings.buttons.cancel.h,
+      el_pos.settings.buttons.cancel.font,
+    );
+
+    this.layoutButton(
+      this.settingsSaveBtns_Pack,
+      el_pos.settings.buttons.save.x,
+      el_pos.settings.buttons.save.y,
+      el_pos.settings.buttons.save.w,
+      el_pos.settings.buttons.save.h,
+      el_pos.settings.buttons.save.font,
+    );
+
+    this.layoutButton(
+      this.settingsDefaultBtns_Pack,
+      el_pos.settings.buttons.defaults.x,
+      el_pos.settings.buttons.defaults.y,
+      el_pos.settings.buttons.defaults.w,
+      el_pos.settings.buttons.defaults.h,
+      el_pos.settings.buttons.defaults.font,
     );
 
     // ABOUT TEXT
@@ -1448,30 +2168,87 @@ export class MainMenu extends Scene {
 
     this.logo.default_depth = this.logo.depth;
 
-    // CURSOR NORMAL
-    this.allowedCursor = this.isAllowedCursor();
-    if (this.allowedCursor) {
-      this.input.setDefaultCursor("none");
+    /// SETTINGS
+    this.savedSettings = this.cleanSettings(default_game_settings);
+    this.settsDraft = { ...this.savedSettings };
 
-      this.cursor = this.add;
-      this.cursor.image(0, 0, "cursor-normal");
-      this.cursor.setOrigin(0, 0);
-      this.cursor.setDepth(depth.cursor);
-      this.cursor.setScrollFactor(0);
-    } else {
-      // mobile or somethig that no cursor
-      this.input.setDefaultCursor("default");
-      this.cursor = null;
-    }
+    const sp = el_pos.settings;
+
+    const settingsTitle = this.add.text(sp.title.x, sp.title.y, "Settings", {
+      fontFamily: "DogicaBold",
+      fontSize: `${sp.title.font}px`,
+      color: "#ffffff",
+      stroke: "#000000",
+      strokeThickness: 8,
+    });
+    settingsTitle.setOrigin(0, 0.5);
+    settingsTitle.setDepth(depth.page_txt);
+    settingsTitle.setVisible(false);
+    settingsTitle.setAlpha(0);
+
+    const s1 = this.makeSettingsSlider("Music Volume", "musicVol", sp.startY);
+    const s2 = this.makeSettingsSlider(
+      "SFX Volume",
+      "sfxVol",
+      sp.startY + sp.row_gap,
+    );
+    const s3 = this.makeSettingsSlider(
+      "Dialogue Volume",
+      "dialogueVol",
+      sp.startY + sp.row_gap * 2,
+    );
+    const s4 = this.makeSettingsSlider(
+      "Screen Brightness",
+      "brightness",
+      sp.startY + sp.row_gap * 3,
+    );
+    const s5 = this.makeSettingsSlider(
+      "Contrast",
+      "contrast",
+      sp.startY + sp.row_gap * 4,
+    );
+    const s6 = this.makeSettingsResolutionDropdown(sp.startY + sp.row_gap * 5);
+
+    this.settingsControls = [s1, s2, s3, s4, s5, s6];
+
+    // w/ title
+    this.settings_objs = [settingsTitle];
+    // console.log(this.settings_objs)
+
+    // each control -> main list
+    this.settings_objs.push(...s1.objs);
+    // console.log(...s1.objs)
+
+    this.settings_objs.push(...s2.objs);
+    this.settings_objs.push(...s3.objs);
+    this.settings_objs.push(...s4.objs);
+    this.settings_objs.push(...s5.objs);
+    this.settings_objs.push(...s6.objs);
+    // console.log(this.settings_objs)
+
+    // normal browser cursor
+    this.input.setDefaultCursor("default");
 
     // BUTTON EVENTS
     this.btn_click_and_hover(this.playBtns_Pack, () =>
       console.log("akejewhrwe"),
     );
 
-    this.btn_click_and_hover(this.settBtns_Pack, () =>
-      console.log("wejrwekjr"),
-    );
+    this.btn_click_and_hover(this.settBtns_Pack, () => {
+      this.showSettingsPage();
+    });
+
+    this.btn_click_and_hover(this.settingsCancelBtns_Pack, () => {
+      this.dontSaveNewSetts();
+    });
+
+    this.btn_click_and_hover(this.settingsSaveBtns_Pack, () => {
+      this.saveNewSetts();
+    });
+
+    this.btn_click_and_hover(this.settingsDefaultBtns_Pack, () => {
+      this.settingReset();
+    });
 
     // ABOUT PAGE
     this.btn_click_and_hover(this.abtBtns_Pack, () => this.showAboutPage());
@@ -1517,15 +2294,8 @@ export class MainMenu extends Scene {
     this.bringBtnSetIn(this.abtBtns_Pack, 240);
 
     this.time.delayedCall(600, () => this.resBtnHoverStates());
-  }
 
-  // each update make the cursor move to currnt place
-  // HOPEFULY THIS IS NOT MEMORY INTESNIVE I DONT KNOW
-  //TODO: add fps limit maybe later MAYBE
-  update() {
-    if (!this.allowedCursor || !this.cursor) return;
-
-    const pointer = this.input.activePointer;
-    this.cursor.setPosition(pointer.x, pointer.y);
+    // LOAD SETTTINGS
+    this.loadApplySetts();
   }
 }
