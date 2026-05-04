@@ -32,6 +32,8 @@ export const default_game_settings = {
 export const default_game_data = {
   saveVer: 1,
 
+  knowledgeLogUnlocked: false,
+
   currentStoryState: {
     chapterName: "introduction-potion",
     chapterObjective: null,
