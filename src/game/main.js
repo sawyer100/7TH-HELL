@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { Preloader } from "./scenes/Preloader";
 import { MainMenu } from "./scenes/MainMenu";
+import { KnowledgeLogOverlay } from "./scenes/KnowledgeLog";
 
 const GAME_WIDTH = 1600;
 const GAME_HEIGHT = 900;
@@ -25,6 +26,6 @@ export default function StartGame(parent) {
       antialias: false,
     },
 
-    scene: [Preloader, MainMenu],
+    scene: [Preloader, MainMenu, KnowledgeLogOverlay], // every scene must be laoded here to work
   });
 }
