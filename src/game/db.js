@@ -261,6 +261,11 @@ export async function saveGameData(data) {
   });
 }
 
+export async function resetGameData() {
+  const new_data = JSON.parse(JSON.stringify(default_game_data));
+  return await saveGameData(new_data);
+}
+
 // error
 // if you cant openDB() + error, show this warning
 function dbWarn() {
