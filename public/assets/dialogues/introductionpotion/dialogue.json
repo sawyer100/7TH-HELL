@@ -1,0 +1,68 @@
+{
+  "id": "introduction-potion",
+  "lines": [
+    {
+      "type": "say",
+      "speaker": null,
+      "text": "*clang* *clash*"
+    },
+    {
+      "type": "say",
+      "speaker": null,
+      "text": "*bang* *tink* *clank*"
+    },
+    {
+      "type": "say",
+      "speaker": "Judson",
+      "text": "Now..."
+    },
+    {
+      "type": "say",
+      "speaker": "Judson",
+      "text": "Now... People will know who I am",
+      "actions": [
+        {
+          "id": "raisePotion"
+        }
+      ]
+    },
+    {
+      "type": "say",
+      "speaker": "Judson",
+      "text": "They won't have a choice."
+    },
+    {
+      "type": "action",
+      "id": "shakePotion"
+    },
+    {
+      "type": "say",
+      "speaker": null,
+      "text": "*Gulp* *Gulp* *Gulp*",
+      "actions": [
+        {
+          "id": "drinkPotion"
+        }
+      ]
+    },
+    {
+      "type": "ui",
+      "dialogueVisible": false,
+      "fadeMs": 150
+    },
+    {
+      "type": "action",
+      "id": "collapse"
+    },
+    {
+      "type": "ui",
+      "dialogueVisible": true,
+      "fadeMs": 250
+    },
+    {
+      "type": "say",
+      "speaker": null,
+      "text": "*Collapsed*"
+    }
+  ]
+}
