@@ -89,6 +89,22 @@ function mergeGame(data = {}) {
   };
 }
 
+export async function setCurrentChapterName(chapterName) {
+  const gameData = await loadGameData();
+
+  const updatedGameData = {
+    ...gameData,
+    currentStoryState: {
+      ...(gameData.currentStoryState || {}),
+      chapterName,
+      chapterObjective: null,
+      checkPoint: null,
+    },
+  };
+
+  return await saveGameData(updatedGameData);
+}
+
 function mergeSetts(data = {}) {
   if (!data) {
     data = {};
