@@ -1,0 +1,40 @@
+{
+  "id": "classroom",
+  "lines": [
+    {
+      "type": "say",
+      "speaker": null,
+      "text": "*BANG! CRASH! BANG! BANG!*"
+    },
+    {
+      "type": "say",
+      "speaker": "Kim",
+      "text": "Okay..."
+    },
+    {
+      "type": "say",
+      "speaker": "Kim",
+      "text": "Hold up lemme find my bag."
+    },
+    {
+      "type": "action",
+      "id": "startFindBagObjective"
+    }
+  ],
+  "afterBagLines": [
+    {
+      "type": "say",
+      "speaker": "Kim",
+      "text": "Got it."
+    },
+    {
+      "type": "say",
+      "speaker": "Kim",
+      "text": "Now I need to get out of here."
+    },
+    {
+      "type": "action",
+      "id": "startLeaveRoomObjective"
+    }
+  ]
+}

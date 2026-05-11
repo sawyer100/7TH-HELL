@@ -38,7 +38,7 @@
     {
       "type": "say",
       "speaker": null,
-      "text": "*Gulp* *Gulp* *Gulp*",
+      "text": "*gulp* *gulp* *gulp*",
       "actions": [
         {
           "id": "drinkPotion"
@@ -63,6 +63,10 @@
       "type": "say",
       "speaker": null,
       "text": "*Collapsed*"
+    },
+    {
+      "type": "action",
+      "id": "goToIdCard"
     }
   ]
 }
