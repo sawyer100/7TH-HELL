@@ -8,6 +8,8 @@ export class Preloader extends Scene {
 
   preload() {
     this.load.setPath("assets");
+    // pause button
+    this.load.image("pause-button", "scenes/other/pause-button.png");
 
     // TITLE SCENE
     // design extraas
@@ -84,12 +86,64 @@ export class Preloader extends Scene {
       "knowledge-header-box",
       "scenes/knowledge-log/header-box.png",
     );
+
+    // INTRODUCTION POTION SCENE
+    this.load.image(
+      "intro-potion-character",
+      "scenes/introductionpotion/character.png",
+    );
+
+    this.load.image(
+      "intro-potion-potion",
+      "scenes/introductionpotion/potion.png",
+    );
+
+    this.load.image("dialogue-box", "scenes/other/dialogue-box.png");
+
+    // DIALOGUE
+    this.load.json(
+      "dialogue-introduction-potion",
+      "dialogues/introductionpotion/dialogue.json",
+    );
+
+    // ID CARD SCENE
+    this.load.image(
+      "id-card-card-background",
+      "scenes/id-card/card-background.png",
+    );
+    this.load.image("id-card-card", "scenes/id-card/id-card.png");
+    this.load.image("id-card-door-open", "scenes/id-card/door-open.png");
+    this.load.image("id-card-background", "scenes/id-card/background.png");
+    this.load.image("id-card-full-door", "scenes/id-card/full-door.png");
+    this.load.image("id-card-door-open", "scenes/id-card/door-open.png");
+    this.load.image("id-card-locker", "scenes/id-card/locker.png");
+    this.load.image("id-card-kim", "scenes/id-card/kim.png");
+    this.load.image("id-card-meryl", "scenes/id-card/meryl.png");
+
+    this.load.json("dialogue-id-card", "dialogues/id-card/dialogue.json");
+
+    // CLASSROOM SCENE
+    this.load.image("classroom-bag", "scenes/classroom/bag.png");
+    this.load.image(
+      "classroom-inventory-unlocked",
+      "scenes/classroom/inventory-unlocked.png",
+    );
+
+    this.load.json("dialogue-classroom", "dialogues/classroom/dialogue.json");
+
+    //dialogue icons top
+    this.load.image("classroom-kim-icon", "scenes/classroom/kim-icon.png");
+    this.load.image("classroom-meryl-icon", "scenes/classroom/meryl-icon.png");
   }
 
   create() {
     // STAY ALIVEE ALL THE TIME, NOT REPLACING THE MAIN MENU!
     this.scene.launch("KnowledgeLogOverlay");
+    this.scene.launch("PauseMenuOverlay");
+    this.scene.launch("SettingsOverlay");
     this.scene.bringToTop("KnowledgeLogOverlay");
+    this.scene.bringToTop("PauseMenuOverlay");
+    this.scene.bringToTop("SettingsOverlay");
     // after everything loaded, move to main menu
     this.scene.start("MainMenu");
   }

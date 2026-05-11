@@ -33,6 +33,7 @@ export const default_game_data = {
   saveVer: 1,
 
   knowledgeLogUnlocked: false,
+  inventoryUnlocked: false,
 
   currentStoryState: {
     chapterName: "introduction-potion",
@@ -87,6 +88,34 @@ function mergeGame(data = {}) {
       ...(data.inventory || {}),
     },
   };
+}
+
+export async function setChapterObjective(chapterObjective, checkPoint = null) {
+  const gameData = await loadGameData();
+
+  const updatedGameData = {
+    ...gameData,
+    currentStoryState: {
+      ...(gameData.currentStoryState || {}),
+      chapterName:
+        gameData.currentStoryState?.chapterName || "introduction-potion",
+      chapterObjective,
+      checkPoint,
+    },
+  };
+
+  return await saveGameData(updatedGameData);
+}
+
+export async function setInventoryUnlocked(inventoryUnlocked = true) {
+  const gameData = await loadGameData();
+
+  const updatedGameData = {
+    ...gameData,
+    inventoryUnlocked,
+  };
+
+  return await saveGameData(updatedGameData);
 }
 
 export async function setCurrentChapterName(chapterName) {

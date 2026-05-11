@@ -4,7 +4,10 @@ import { MainMenu } from "./scenes/MainMenu";
 import { KnowledgeLogOverlay } from "./scenes/KnowledgeLog";
 import { PauseMenuOverlay } from "./scenes/PauseMenu";
 import { IntroductionPotion } from "./scenes/IntroductionPotion";
+import { SettingsOverlay } from "./scenes/SettingsOverlay";
+import { IdCard } from "./scenes/IdCard";
 
+import { Classroom } from "./scenes/Classroom";
 const GAME_WIDTH = 1600;
 const GAME_HEIGHT = 900;
 
@@ -23,7 +26,7 @@ export default function StartGame(parent) {
       height: GAME_HEIGHT,
       expandParent: true,
     },
-    
+
     render: {
       pixelArt: true,
       antialias: false,
@@ -35,6 +38,9 @@ export default function StartGame(parent) {
       KnowledgeLogOverlay,
       IntroductionPotion,
       PauseMenuOverlay,
+      SettingsOverlay,
+      IdCard,
+      Classroom,
     ], // every scene must be laoded here to work
   });
 }

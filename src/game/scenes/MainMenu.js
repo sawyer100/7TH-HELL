@@ -1,5 +1,11 @@
 import Phaser, { Scene } from "phaser";
-import { default_game_settings, loadSettings, saveSettings } from "../db";
+import {
+  default_game_settings,
+  loadSettings,
+  saveSettings,
+  loadGameData,
+  resetGameData,
+} from "../db";
 
 // change image names / keys inside Preloader.js
 
@@ -147,6 +153,208 @@ const depth = {
 export class MainMenu extends Scene {
   constructor() {
     super("MainMenu");
+  }
+
+  async startGameFromSave() {
+    if (this.middleOfTrans) return;
+
+    this.game.canvas.style.cursor = "default";
+
+    let gameData = null;
+
+    try {
+      gameData = await loadGameData();
+    } catch (error) {
+      console.warn("can't laodd game data.", error);
+    }
+
+    const chapterName =
+      gameData?.currentStoryState?.chapterName || "introduction-potion";
+
+    if (chapterName === "introduction-potion") {
+      this.scene.start("IntroductionPotion");
+      this.scene.bringToTop("KnowledgeLogOverlay");
+      this.scene.bringToTop("PauseMenuOverlay");
+      return;
+    }
+
+    if (chapterName === "id-card") {
+      this.input.setDefaultCursor("default");
+
+      if (this.game && this.game.canvas) {
+        this.game.canvas.style.cursor = "default";
+      }
+
+      this.scene.start("IdCard");
+      this.scene.bringToTop("KnowledgeLogOverlay");
+      this.scene.bringToTop("PauseMenuOverlay");
+      this.scene.bringToTop("SettingsOverlay");
+      return;
+    }
+
+    // Later, more chapter routing goes here.
+    // For now, everything starts introduction-potion.
+    this.scene.start("IntroductionPotion");
+    this.scene.bringToTop("KnowledgeLogOverlay");
+    this.scene.bringToTop("PauseMenuOverlay");
+  }
+
+  makeRestartButton() {
+    this.restartText = this.add.text(
+      main_width - 28,
+      main_height - 24,
+      "Restart",
+      {
+        fontFamily: "DogicaBold",
+        fontSize: "16px",
+        color: "#ffffff",
+        stroke: "#000000",
+        strokeThickness: 4,
+      },
+    );
+
+    this.restartText.setOrigin(1, 1);
+    this.restartText.setDepth(9999);
+    this.restartText.setInteractive({ useHandCursor: false });
+
+    this.restartText.on("pointerover", () => {
+      this.restartText.setAlpha(0.7);
+      this.input.setDefaultCursor("pointer");
+    });
+
+    this.restartText.on("pointerout", () => {
+      this.restartText.setAlpha(1);
+      this.input.setDefaultCursor("default");
+    });
+
+    this.restartText.on("pointerdown", () => {
+      this.showRestartConfirm();
+    });
+  }
+
+  showRestartConfirm() {
+    if (this.restartConfirmRoot) return;
+
+    this.restartConfirmRoot = this.add.container(0, 0);
+    this.restartConfirmRoot.setDepth(200000);
+
+    const blocker = this.add.rectangle(
+      0,
+      0,
+      main_width,
+      main_height,
+      0x000000,
+      0.72,
+    );
+    blocker.setOrigin(0, 0);
+    blocker.setInteractive();
+
+    const box = this.add.rectangle(800, 450, 780, 330, 0x641818, 1);
+    box.setOrigin(0.5);
+
+    const outline = this.add.graphics();
+    outline.lineStyle(3, 0xffffff, 1);
+    outline.strokeRect(410, 285, 780, 330);
+
+    const title = this.add.text(800, 335, "Restart Game?", {
+      fontFamily: "DogicaBold",
+      fontSize: "28px",
+      color: "#ffffff",
+      stroke: "#000000",
+      strokeThickness: 4,
+      align: "center",
+    });
+    title.setOrigin(0.5);
+
+    const body = this.add.text(800, 405, "This will reset your game data.", {
+      fontFamily: "Dogica",
+      fontSize: "18px",
+      color: "#ffffff",
+      stroke: "#000000",
+      strokeThickness: 3,
+      align: "center",
+    });
+    body.setOrigin(0.5);
+
+    const yes = this.add.text(660, 525, "Yes", {
+      fontFamily: "DogicaBold",
+      fontSize: "22px",
+      color: "#ffffff",
+      stroke: "#000000",
+      strokeThickness: 4,
+    });
+    yes.setOrigin(0.5);
+    yes.setInteractive({ useHandCursor: false });
+
+    const no = this.add.text(940, 525, "No", {
+      fontFamily: "DogicaBold",
+      fontSize: "22px",
+      color: "#ffffff",
+      stroke: "#000000",
+      strokeThickness: 4,
+    });
+    no.setOrigin(0.5);
+    no.setInteractive({ useHandCursor: false });
+
+    yes.on("pointerover", () => {
+      yes.setAlpha(0.7);
+      this.input.setDefaultCursor("pointer");
+    });
+
+    yes.on("pointerout", () => {
+      yes.setAlpha(1);
+      this.input.setDefaultCursor("default");
+    });
+
+    no.on("pointerover", () => {
+      no.setAlpha(0.7);
+      this.input.setDefaultCursor("pointer");
+    });
+
+    no.on("pointerout", () => {
+      no.setAlpha(1);
+      this.input.setDefaultCursor("default");
+    });
+
+    yes.on("pointerdown", () => {
+      this.confirmRestartGame();
+    });
+
+    no.on("pointerdown", () => {
+      this.hideRestartConfirm();
+    });
+
+    this.restartConfirmRoot.add([blocker, box, outline, title, body, yes, no]);
+  }
+
+  hideRestartConfirm() {
+    if (!this.restartConfirmRoot) return;
+
+    this.restartConfirmRoot.destroy(true);
+    this.restartConfirmRoot = null;
+    this.input.setDefaultCursor("default");
+  }
+
+  async confirmRestartGame() {
+    try {
+      await resetGameData();
+      this.hideRestartConfirm();
+    } catch (error) {
+      console.error("Could not reset game data.", error);
+
+      if (this.restartConfirmRoot) {
+        const err = this.add.text(800, 590, "Reset failed", {
+          fontFamily: "DogicaBold",
+          fontSize: "16px",
+          color: "#ffffff",
+          stroke: "#000000",
+          strokeThickness: 4,
+        });
+
+        err.setOrigin(0.5);
+        this.restartConfirmRoot.add(err);
+      }
+    }
   }
 
   /// make IMg become width pixels wide and scale height relative to it
@@ -2230,9 +2438,9 @@ export class MainMenu extends Scene {
     this.input.setDefaultCursor("default");
 
     // BUTTON EVENTS
-    this.btn_click_and_hover(this.playBtns_Pack, () =>
-      console.log("akejewhrwe"),
-    );
+    this.btn_click_and_hover(this.playBtns_Pack, () => {
+      this.startGameFromSave();
+    });
 
     this.btn_click_and_hover(this.settBtns_Pack, () => {
       this.showSettingsPage();
@@ -2261,6 +2469,8 @@ export class MainMenu extends Scene {
         this.showTitlePage();
       }
     });
+
+    this.makeRestartButton();
 
     //CREDITS
     this.btn_click_and_hover(this.credBtns_Pack, () => this.showCreditsPage());
