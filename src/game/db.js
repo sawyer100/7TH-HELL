@@ -90,6 +90,23 @@ function mergeGame(data = {}) {
   };
 }
 
+export async function setTestingChapterName(chapterName) {
+  const gameData = await loadGameData();
+
+  const updatedGameData = {
+    ...gameData,
+    inventoryUnlocked: true,
+    currentStoryState: {
+      ...(gameData.currentStoryState || {}),
+      chapterName,
+      chapterObjective: null,
+      checkPoint: "testing-only",
+    },
+  };
+
+  return await saveGameData(updatedGameData);
+}
+
 export async function setChapterObjective(chapterObjective, checkPoint = null) {
   const gameData = await loadGameData();
 
