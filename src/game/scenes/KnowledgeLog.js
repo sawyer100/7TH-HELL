@@ -21,7 +21,12 @@ const el_config = {
 
     data_unlockname: "knowledgeLogUnlocked",
     scenes_that_are_allowed: ["Add Some chapter here later"],
-    scenes_that_are_NOT_allowed: ["MainMenu", "Pause"],
+    scenes_that_are_NOT_allowed: [
+      "MainMenu",
+      "PauseMenuOverlay",
+      "FightScene",
+      "BattleScene",
+    ],
   },
 
   //!! TEMPORARY REMEMBER TO DELETEE LATER
@@ -121,7 +126,7 @@ export class KnowledgeLogOverlay extends Scene {
 
     this.input.keyboard.on("keydown-ESC", () => {
       if (this.isOpen) {
-        // window.alert("wejkrewkrw working")
+        this.registry.set("blockPauseFrame", this.game.loop.frame);
         this.close();
       }
     });
@@ -587,14 +592,19 @@ export class KnowledgeLogOverlay extends Scene {
 
       this.root.add(not_encount);
     } else {
-      const m_name = this.add.text(l.details.x, l.details.y, mob_curr.name, {
-        fontSize: `${l.details.nameFont}px`,
-        color: "#ff5fac",
+      const m_name = this.add.text(
+        l.details.x,
+        l.details.y,
+        `Type: ${mob_curr.name}`,
+        {
+          fontSize: `${l.details.nameFont}px`,
+          color: "#ff5fac",
 
-        fontFamily: "DogicaBold",
-        stroke: "#000000",
-        strokeThickness: 4,
-      });
+          fontFamily: "DogicaBold",
+          stroke: "#000000",
+          strokeThickness: 4,
+        },
+      );
 
       m_name.setOrigin(0, 0);
 
@@ -935,7 +945,7 @@ export class KnowledgeLogOverlay extends Scene {
     const close_this = this.add.text(
       l.close_this.x,
       l.close_this.y,
-      "ESC / K to close",
+      "ESC to close",
       {
         stroke: "#000000",
         fontSize: `${l.close_this.font}px`,
@@ -996,29 +1006,36 @@ export class KnowledgeLogOverlay extends Scene {
 
     let scene_allowed = false;
 
-    if (this.cnfg.usage.d_allscene) {
-      scene_allowed = true;
-    } else {
-      const activeScenes = this.scene.manager.getScenes(true);
-      const activeSceneKeys = [];
-      const blockedScenes = this.cnfg.usage.scenes_that_are_NOT_allowed || [];
+    const activeScenes = this.scene.manager.getScenes(true);
+    const activeSceneKeys = [];
+    const blockedScenes = this.cnfg.usage.scenes_that_are_NOT_allowed || [];
+    const allowedScenes = this.cnfg.usage.scenes_that_are_allowed || [];
 
-      const allowedScenes = this.cnfg.usage.scenes_that_are_allowed || [];
+    let blockedNow = false;
 
-      let blockedNow = false;
+    activeScenes.forEach((scene) => {
+      activeSceneKeys.push(scene.scene.key);
 
-      activeScenes.forEach((scene) => {
-        activeSceneKeys.push(scene.scene.key);
-      });
-
-      activeSceneKeys.forEach((key) => {
-        if (blockedScenes.includes(key)) {
+      if (blockedScenes.includes(scene.scene.key)) {
+        if (scene.scene.key === "PauseMenuOverlay") {
+          if (scene.isOpen) {
+            blockedNow = true;
+          }
+        } else if (scene.scene.key === "SettingsOverlay") {
+          if (scene.isOpen) {
+            blockedNow = true;
+          }
+        } else {
           blockedNow = true;
         }
-      });
+      }
+    });
 
-      if (blockedNow) {
-        scene_allowed = false;
+    if (blockedNow) {
+      scene_allowed = false;
+    } else {
+      if (this.cnfg.usage.d_allscene) {
+        scene_allowed = true;
       } else {
         activeSceneKeys.forEach((key) => {
           if (allowedScenes.includes(key)) {

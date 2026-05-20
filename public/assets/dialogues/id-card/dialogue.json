@@ -1,0 +1,92 @@
+{
+  "id": "id-card",
+  "lines": [
+    {
+      "type": "say",
+      "speaker": "Kim",
+      "text": "Ew my ID looks terrible..."
+    },
+    {
+      "type": "say",
+      "speaker": "Kim",
+      "text": "Think they'll let me retake it?"
+    },
+    {
+      "type": "action",
+      "id": "showIDCard"
+    },
+    {
+      "type": "say",
+      "speaker": "Kim",
+      "text": "Did you understand Ms. Alpha's assignment?"
+    },
+    {
+      "type": "say",
+      "speaker": "Meryl",
+      "text": "Absolutely no clue."
+    },
+    {
+      "type": "say",
+      "speaker": "Announcement",
+      "text": "Attention students and faculty. We are now in a Code Red lockdown.",
+      "actions": [
+        {
+          "id": "schoolAlarm"
+        }
+      ]
+    },
+    {
+      "type": "say",
+      "speaker": "Announcement",
+      "text": "Move to the nearest classroom immediately. Lock the door."
+    },
+    {
+      "type": "say",
+      "speaker": "Kim",
+      "text": "What the hell is going on?"
+    },
+    {
+      "type": "say",
+      "speaker": "Meryl",
+      "text": "Lockdown??"
+    },
+    {
+      "type": "say",
+      "speaker": "Students",
+      "text": "Get out of the way!",
+      "actions": [
+        {
+          "id": "studentRunningBy"
+        }
+      ]
+    },
+    {
+      "type": "say",
+      "speaker": "Students",
+      "text": "Stop blocking the hallway!",
+      "actions": [
+        {
+          "id": "studentRunningBy"
+        }
+      ]
+    },
+    {
+      "type": "say",
+      "speaker": "Meryl",
+      "text": "Okay definitely a lockdown."
+    },
+    {
+      "type": "say",
+      "speaker": "Meryl",
+      "text": "Girl let's go."
+    },
+    {
+      "type": "action",
+      "id": "walkIntoDoorAndFadeCharacters"
+    },
+    {
+      "type": "action",
+      "id": "goToClassroom"
+    }
+  ]
+}

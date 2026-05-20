@@ -1,21 +1,70 @@
 // WITH CLIENT INDEXED.DB, READS IT AND LOADS IT AND SAVES DATA
 
-// playable characters you can save to playableTeam if i remember to use this
-// DONT CHANGE PLS
-const playable_characters = {
-  kim: {
-    displayName: "Kim",
-    defaultHealth: 80,
-  },
-  maryl: {
-    displayName: "Maryl",
-    defaultHealth: 80,
-  },
-};
-
 const db_version = 1;
 const settings_store = "settings";
 const game_data_store = "game";
+
+export function getDefaultInventory() {
+  return JSON.parse(
+    JSON.stringify({
+      consumables: [
+        {
+          id: "onigiri",
+          qty: 4,
+        },
+        {
+          id: "energy_drink",
+          qty: 2,
+        },
+        {
+          id: "whistle",
+          qty: 1,
+        },
+        {
+          id: "bandage",
+          qty: 3,
+        },
+      ],
+
+      weapons: ["pocket_knife"],
+
+      armor: [],
+
+      equippedByCharacter: {
+        kim: {
+          weapons: [],
+          armor: [],
+        },
+
+        meryl: {
+          weapons: ["pocket_knife"],
+          armor: [],
+        },
+      },
+    }),
+  );
+}
+
+export async function resetForFirstBattleDefeat() {
+  const gameData = await loadGameData();
+
+  const updatedGameData = {
+    ...gameData,
+
+    inventoryUnlocked: false,
+
+    currentStoryState: {
+      ...(gameData.currentStoryState || {}),
+      chapterName: "id-card",
+      chapterObjective: null,
+      checkPoint: "id-card",
+    },
+
+    inventory: getDefaultInventory(),
+  };
+
+  return await saveGameData(updatedGameData);
+}
 
 //default settings for new player to be saved
 export const default_game_settings = {
@@ -33,6 +82,7 @@ export const default_game_data = {
   saveVer: 1,
 
   knowledgeLogUnlocked: false,
+  inventoryUnlocked: false,
 
   currentStoryState: {
     chapterName: "introduction-potion",
@@ -43,13 +93,65 @@ export const default_game_data = {
   //more than 1 character on team, so support multiple characters and their stats
   // there are set characters
   // this is the default data so kim should be here
-  playableTeam: [{ ...playable_characters.kim }],
   encounteredEnemies: [],
-  inventory: {
-    consumables: [],
-    weapons: [],
-  },
+  inventory: getDefaultInventory(),
 };
+
+export const max_con = 20;
+
+function ccstuff(consumables = []) {
+  if (!Array.isArray(consumables)) {
+    return [];
+  }
+
+  return consumables.slice(0, max_con);
+}
+
+function syncInv(inventory) {
+  if (!inventory) {
+    return;
+  }
+
+  if (!Array.isArray(inventory.weapons)) {
+    inventory.weapons = [];
+  }
+
+  if (!Array.isArray(inventory.armor)) {
+    inventory.armor = [];
+  }
+
+  if (!inventory.equippedByCharacter) {
+    inventory.equippedByCharacter = {};
+  }
+
+  for (const characterId in inventory.equippedByCharacter) {
+    const equipped = inventory.equippedByCharacter[characterId];
+
+    if (!equipped) {
+      continue;
+    }
+
+    if (!Array.isArray(equipped.weapons)) {
+      equipped.weapons = [];
+    }
+
+    if (!Array.isArray(equipped.armor)) {
+      equipped.armor = [];
+    }
+
+    for (const weaponId of equipped.weapons) {
+      if (weaponId && !inventory.weapons.includes(weaponId)) {
+        inventory.weapons.push(weaponId);
+      }
+    }
+
+    for (const armorId of equipped.armor) {
+      if (armorId && !inventory.armor.includes(armorId)) {
+        inventory.armor.push(armorId);
+      }
+    }
+  }
+}
 
 // LOADING AND SAVING
 
@@ -75,7 +177,7 @@ function mergeGame(data = {}) {
   //   },
   // };
 
-  return {
+  const gameFinal = {
     ...default_game_data,
     ...data,
     currentStoryState: {
@@ -85,8 +187,81 @@ function mergeGame(data = {}) {
     inventory: {
       ...default_game_data.inventory,
       ...(data.inventory || {}),
+      equippedByCharacter: {
+        ...default_game_data.inventory.equippedByCharacter,
+        ...((data.inventory || {}).equippedByCharacter || {}),
+      },
     },
   };
+
+  gameFinal.inventory.consumables = ccstuff(gameFinal.inventory.consumables);
+
+  syncInv(gameFinal.inventory);
+
+  delete gameFinal.playableTeam;
+
+  return gameFinal;
+}
+
+export async function setTestingChapterName(chapterName) {
+  const gameData = await loadGameData();
+
+  const updatedGameData = {
+    ...gameData,
+    inventoryUnlocked: true,
+    currentStoryState: {
+      ...(gameData.currentStoryState || {}),
+      chapterName,
+      chapterObjective: null,
+      checkPoint: "testing-only",
+    },
+  };
+
+  return await saveGameData(updatedGameData);
+}
+
+export async function setChapterObjective(chapterObjective, checkPoint = null) {
+  const gameData = await loadGameData();
+
+  const updatedGameData = {
+    ...gameData,
+    currentStoryState: {
+      ...(gameData.currentStoryState || {}),
+      chapterName:
+        gameData.currentStoryState?.chapterName || "introduction-potion",
+      chapterObjective,
+      checkPoint,
+    },
+  };
+
+  return await saveGameData(updatedGameData);
+}
+
+export async function setInventoryUnlocked(inventoryUnlocked = true) {
+  const gameData = await loadGameData();
+
+  const updatedGameData = {
+    ...gameData,
+    inventoryUnlocked,
+  };
+
+  return await saveGameData(updatedGameData);
+}
+
+export async function setCurrentChapterName(chapterName) {
+  const gameData = await loadGameData();
+
+  const updatedGameData = {
+    ...gameData,
+    currentStoryState: {
+      ...(gameData.currentStoryState || {}),
+      chapterName,
+      chapterObjective: null,
+      checkPoint: null,
+    },
+  };
+
+  return await saveGameData(updatedGameData);
 }
 
 function mergeSetts(data = {}) {
@@ -259,6 +434,11 @@ export async function saveGameData(data) {
       rej(new Error("error loading"));
     };
   });
+}
+
+export async function resetGameData() {
+  const new_data = JSON.parse(JSON.stringify(default_game_data));
+  return await saveGameData(new_data);
 }
 
 // error

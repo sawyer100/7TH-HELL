@@ -4,16 +4,23 @@ const walker = {
   category: "normal",
 
   stats: {
-    DMG: "10",
+    HP: "100",
+    STAM: "80",
     SPD: "70",
-    CRIT: "1.1%",
+    DEF: "0",
   },
 
   skills: [
     {
-      name: "Bite",
-      description:
-        "Skill Description Skill Description Skill Description Skill Description",
+      id: "walker_maul",
+      name: "MAUL",
+      description: "Viciously attacks a survivor",
+      staminaCost: 18,
+      target: "enemy",
+      damage: 18,
+      staminaDamage: 8,
+      effectId: "zombie-maul",
+      attackType: "melee",
     },
   ],
 
@@ -33,16 +40,23 @@ const runner = {
   category: "normal",
 
   stats: {
-    DMG: "10",
-    SPD: "90",
-    CRIT: "1.1%",
+    HP: "70",
+    STAM: "110",
+    SPD: "95",
+    DEF: "0",
   },
 
   skills: [
     {
-      name: "Bite",
-      description:
-        "Skill Description Skill Description Skill Description Skill Description",
+      id: "runner_lunge",
+      name: "LUNGE",
+      description: "Lunges into your face and you DIE.",
+      staminaCost: 26,
+      target: "enemy",
+      damage: 14,
+      staminaDamage: 16,
+      effectId: "zombie-maul",
+      attackType: "melee",
     },
   ],
 
@@ -62,19 +76,37 @@ const brute = {
   category: "normal",
 
   stats: {
-    DMG: "45",
+    HP: "135",
+    STAM: "70",
     SPD: "25",
-    CRIT: "0.4%",
+    DEF: "3",
   },
 
   skills: [
     {
-      name: "Slam",
-      description: "Heavy attack that does high damage but is slow.",
+      id: "brute_slam",
+      name: "SLAM",
+      weight: 60,
+      description:
+        "Slams the ground so hard it feels like 500lbs person drop from 2nd floor.",
+      staminaCost: 36,
+      target: "enemy",
+      damage: 35,
+      staminaDamage: 12,
+      effectId: null,
+      attackType: "melee",
     },
     {
-      name: "Charge",
-      description: "Runs forward and tries to hit the player directly.",
+      id: "brute_charge",
+      name: "CHARGE",
+      weight: 40,
+      description: "Runs into you like a bull.",
+      staminaCost: 42,
+      target: "enemy",
+      damage: 50,
+      staminaDamage: 18,
+      effectId: null,
+      attackType: "melee",
     },
   ],
 
@@ -94,15 +126,24 @@ const boss = {
   category: "bosses",
 
   stats: {
-    DMG: "80",
+    HP: "300",
+    STAM: "120",
     SPD: "35",
-    CRIT: "5%",
+    DEF: "5",
   },
 
   skills: [
     {
-      name: "Hellfire",
-      description: "Large area attack. Placeholder description for now.",
+      id: "boss_hellfire",
+      name: "HELLFIRE",
+      description: "placehodler not ready",
+      staminaCost: 50,
+      target: "enemy",
+      damage: 60,
+      staminaDamage: 20,
+      effectId: null,
+      attackType: "ranged",
+      ranged: true,
     },
   ],
 
