@@ -22,13 +22,62 @@ export class PauseMenuOverlay extends Scene {
     this.root.setDepth(999999); //i dont know if theres a limti but its probably ok
 
     this.input.keyboard.on("keydown-ESC", () => {
+      const blockedFrame = this.registry.get("blockPauseFrame");
+
+      if (blockedFrame === this.game.loop.frame) {
+        return;
+      }
+
+      const inventory = this.scene.get("InventoryOverlay");
+      const knowledgeLog = this.scene.get("KnowledgeLogOverlay");
+
+      if (inventory) {
+        if (inventory.isOpen) {
+          return;
+        }
+      }
+
+      if (knowledgeLog) {
+        if (knowledgeLog.isOpen) {
+          return;
+        }
+      }
+
       if (this.isOpen) {
         this.close();
       }
     });
   }
+  shouldBlockOpen() {
+    const blockedFrame = this.registry.get("blockPauseFrame");
 
+    if (blockedFrame === this.game.loop.frame) {
+      return true;
+    }
+
+    const inventory = this.scene.get("InventoryOverlay");
+
+    if (inventory) {
+      if (inventory.isOpen) {
+        return true;
+      }
+    }
+
+    const knowledgeLog = this.scene.get("KnowledgeLogOverlay");
+
+    if (knowledgeLog) {
+      if (knowledgeLog.isOpen) {
+        return true;
+      }
+    }
+
+    return false;
+  }
   open(sceneKey) {
+    if (this.shouldBlockOpen()) {
+      return;
+    }
+
     if (this.isOpen) return;
 
     this.isOpen = true;
@@ -364,12 +413,10 @@ export class PauseMenuOverlay extends Scene {
 
         duration: 120,
         ease: "Quad.Out",
-
       });
     });
 
     this.resZone.on("pointerout", () => {
-      
       if (!this.resZone.input) return;
       if (!this.resZone.input.enabled) return;
 
@@ -424,9 +471,6 @@ export class PauseMenuOverlay extends Scene {
     this.settsBZONe.setInteractive({ useHandCursor: false });
 
     this.settsBZONe.isHovered = false;
-
-
-
 
     this.settsBZONe.on("pointerover", () => {
       if (!this.settsBZONe.input) return;
@@ -487,7 +531,7 @@ export class PauseMenuOverlay extends Scene {
 
       this.tweens.killTweensOf(this.setts_BtnBg);
       this.tweens.killTweensOf(this.setts_BtnHove);
-      
+
       this.tweens.killTweensOf(this.settsBText);
 
       this.tweens.add({
@@ -551,7 +595,6 @@ export class PauseMenuOverlay extends Scene {
       this.q_BZone.isHovered = true;
       this.input.setDefaultCursor("pointer");
 
-
       this.tweens.killTweensOf(this.quitBtnBg);
 
       this.tweens.killTweensOf(this.q_BtnHove);
@@ -600,7 +643,6 @@ export class PauseMenuOverlay extends Scene {
       this.q_BZone.isHovered = false;
 
       this.input.setDefaultCursor("default");
-
 
       this.tweens.killTweensOf(this.quitBtnBg);
 
@@ -651,22 +693,12 @@ export class PauseMenuOverlay extends Scene {
     this.tweens.killTweensOf(this.resZone);
 
     this.bg_resBtn.setPosition(this.resumeBtnTargetX, this.resumeBtnTargetY);
-    this.resBtnHove.setPosition(
-
-      this.resumeBtnTargetX,
-      this.resumeBtnTargetY,
-    );
-    this.res_btnText.setPosition(
-      this.resumeBtnTargetX,
-      this.resumeBtnTargetY,
-    );
-    this.resZone.setPosition(
-      this.resumeBtnTargetX,
-      this.resumeBtnTargetY,
-    );
+    this.resBtnHove.setPosition(this.resumeBtnTargetX, this.resumeBtnTargetY);
+    this.res_btnText.setPosition(this.resumeBtnTargetX, this.resumeBtnTargetY);
+    this.resZone.setPosition(this.resumeBtnTargetX, this.resumeBtnTargetY);
     this.bg_resBtn.setAlpha(0);
     // this.bg_resBtn.setAlpha(0);
-// 
+    //
     this.resBtnHove.setAlpha(0);
 
     this.res_btnText.setAlpha(0);
@@ -678,29 +710,19 @@ export class PauseMenuOverlay extends Scene {
     this.tweens.killTweensOf(this.settsBText);
     this.tweens.killTweensOf(this.settsBZONe);
 
-    this.setts_BtnBg.setPosition(
-      this.settsTx,
-      this.settsTY,
-    );
+    this.setts_BtnBg.setPosition(this.settsTx, this.settsTY);
     this.setts_BtnHove.setPosition(
       this.settsTx,
 
       this.settsTY,
     );
-    this.settsBText.setPosition(
-      this.settsTx,
-      this.settsTY,
-    );
-    this.settsBZONe.setPosition(
-      this.settsTx,
-      this.settsTY,
-    );
+    this.settsBText.setPosition(this.settsTx, this.settsTY);
+    this.settsBZONe.setPosition(this.settsTx, this.settsTY);
 
     this.setts_BtnBg.setAlpha(0);
     this.setts_BtnHove.setAlpha(0);
 
     this.settsBText.setAlpha(0);
-
 
     this.tweens.killTweensOf(this.quitBtnBg);
 
@@ -748,10 +770,7 @@ export class PauseMenuOverlay extends Scene {
           this.resumeBtnTargetY,
         );
 
-        this.resZone.setPosition(
-          this.resumeBtnTargetX,
-          this.resumeBtnTargetY,
-        );
+        this.resZone.setPosition(this.resumeBtnTargetX, this.resumeBtnTargetY);
 
         this.bg_resBtn.setScale(
           this.bg_resBtn.baseScaleX,
@@ -762,7 +781,6 @@ export class PauseMenuOverlay extends Scene {
           this.resBtnHove.baseScaleX,
           this.resBtnHove.baseScaleY,
         );
-
 
         this.res_btnText.setScale(1);
 
@@ -789,26 +807,13 @@ export class PauseMenuOverlay extends Scene {
         this.tweens.killTweensOf(this.setts_BtnHove);
         // console.log("kdone")
         // this.tweens.killTweensOf(this.setts_BtnHove);
-        // 
+        //
         this.tweens.killTweensOf(this.settsBText);
 
-        this.setts_BtnBg.setPosition(
-          this.settsTx,
-          this.settsTY,
-        );
-        this.setts_BtnHove.setPosition(
-          this.settsTx,
-          this.settsTY,
-        );
-        this.settsBText.setPosition(
-          this.settsTx,
-          this.settsTY,
-
-        );
-        this.settsBZONe.setPosition(
-          this.settsTx,
-          this.settsTY,
-        );
+        this.setts_BtnBg.setPosition(this.settsTx, this.settsTY);
+        this.setts_BtnHove.setPosition(this.settsTx, this.settsTY);
+        this.settsBText.setPosition(this.settsTx, this.settsTY);
+        this.settsBZONe.setPosition(this.settsTx, this.settsTY);
 
         this.setts_BtnBg.setScale(
           this.setts_BtnBg.baseScaleX,

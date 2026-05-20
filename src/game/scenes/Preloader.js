@@ -120,6 +120,14 @@ export class Preloader extends Scene {
     this.load.image("id-card-kim", "scenes/id-card/kim.png");
     this.load.image("id-card-meryl", "scenes/id-card/meryl.png");
 
+    // FIGHT CPOST HALLWAY IMAGES
+    this.load.image(
+      "background-center",
+      "scenes/id-card/background-center.png",
+    );
+    this.load.image("background-left", "scenes/id-card/background-left.png");
+    this.load.image("background-right", "scenes/id-card/background-right.jpg");
+
     this.load.json("dialogue-id-card", "dialogues/id-card/dialogue.json");
 
     // CLASSROOM SCENE
@@ -134,16 +142,58 @@ export class Preloader extends Scene {
     //dialogue icons top
     this.load.image("classroom-kim-icon", "scenes/classroom/kim-icon.png");
     this.load.image("classroom-meryl-icon", "scenes/classroom/meryl-icon.png");
+
+    // agro / hositle icon
+    this.load.image("agro-icon", "scenes/other/agro.png");
+
+    /// fihtt
+    this.load.image("versus-v", "scenes/fight-scene/versus-v.png");
+    this.load.image("versus-s", "scenes/fight-scene/versus-s.png");
+    this.load.image(
+      "fight-opening-background",
+      "scenes/fight-scene/fight-opening-background.png",
+    );
+
+    /// WEPAONS / OTHER ITEMS
+    this.load.image("item-baton", "items/item-baton.png");
+    this.load.image("item-gun", "items/item-gun.png");
+    this.load.image("item-healing-potion", "items/healing-potion.png");
+
+    this.load.image("item-bandage", "items/bandage.png");
+
+    // SKILL EFFECTS
+    this.load.image("effect-zombie-maul", "skill-effects/maul.png");
+    this.load.image("effect-shield", "skill-effects/shield.png");
+
+    ///
+    this.load.image("item-adrenaline-shot", "items/item-adrenaline-shot.png");
+    this.load.image("item-baton", "items/item-baton.png");
+    this.load.image("item-bike-helmet", "items/item-bike-helmet.png");
+    this.load.image("item-crow-bar", "items/item-crow-bar.png");
+    this.load.image("item-energy-drink", "items/item-energy-drink.png");
+    this.load.image("item-gun", "items/item-gun.png");
+    this.load.image("item-pocket-knife", "items/item-pocket-knife.png");
+    this.load.image("item-whistle", "items/item-whistle.png");
+
+    this.load.image("item-onigiri", "items/item-onigiri.png");
+    this.load.image("item-energy-bar", "items/item-energy-bar.png");
+    // STATUS EFFECT ICON
+    this.load.image("status-bleeding", "items/status-bleeding.png");
   }
 
   create() {
     // STAY ALIVEE ALL THE TIME, NOT REPLACING THE MAIN MENU!
     this.scene.launch("KnowledgeLogOverlay");
     this.scene.launch("PauseMenuOverlay");
+    this.scene.launch("InventoryIconOverlay");
     this.scene.launch("SettingsOverlay");
+    this.scene.launch("InventoryOverlay");
     this.scene.bringToTop("KnowledgeLogOverlay");
     this.scene.bringToTop("PauseMenuOverlay");
     this.scene.bringToTop("SettingsOverlay");
+    this.scene.bringToTop("InventoryIconOverlay");
+    this.scene.bringToTop("InventoryOverlay");
+
     // after everything loaded, move to main menu
     this.scene.start("MainMenu");
   }

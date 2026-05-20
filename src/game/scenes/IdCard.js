@@ -725,6 +725,13 @@ export class IdCard extends Scene {
   create() {
     this.game.canvas.style.cursor = "default";
 
+    this.schoolAlarmStarted = false;
+    this.schoolAlarmTweens = null;
+    this.leftAlarm = null;
+    this.rightAlarm = null;
+    this.OVERLAYlockdown = null;
+    this.LOCKDOWNRedCircleStuff = null;
+    this.doorOpened = false;
     this.studentRunCount = 0;
 
     setCurrentChapterName("id-card").catch((error) => {

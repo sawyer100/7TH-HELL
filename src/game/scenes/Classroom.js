@@ -21,6 +21,10 @@ export class Classroom extends Scene {
       console.log("werwl");
     });
 
+    setInventoryUnlocked(false).catch((error) => {
+      console.log("werew");
+    });
+
     this.canMove = false;
     this.dialogueActive = false;
     this.objectiveMode = null;
@@ -185,30 +189,31 @@ export class Classroom extends Scene {
     this.dialogueBox.setOrigin(0.5, 1);
     this.dialogueBox.setDepth(3000);
 
+    const portraitHeight = 340;
+
     const dialogueBoxScale = 1470 / this.dialogueBox.width;
     this.kimlIconThe = this.add.image(
-      main_width / 2 - 470,
-      main_height - 190,
+      main_width / 2 - 520,
+      main_height - 110,
       "classroom-kim-icon",
     );
 
     this.kimlIconThe.setOrigin(0.5, 1);
 
     this.kimlIconThe.setDepth(2999);
-    this.kimlIconThe.setScale(0.85);
-
-    this.kimlIconThe.setVisible(false);
 
     this.merylIconThe = this.add.image(
-      main_width / 2 - 470,
-      main_height - 190,
+      main_width / 2 - 520,
+      main_height - 110,
       "classroom-meryl-icon",
     );
+    this.kimlIconThe.setScale(portraitHeight / this.kimlIconThe.height);
+    this.kimlIconThe.setVisible(false);
+    this.merylIconThe.setScale(portraitHeight / this.merylIconThe.height);
 
     this.merylIconThe.setOrigin(0.5, 1);
     this.merylIconThe.setDepth(2999);
 
-    this.merylIconThe.setScale(0.85);
     this.merylIconThe.setVisible(false);
 
     this.dialogueBox.setScale(dialogueBoxScale);
@@ -386,7 +391,37 @@ export class Classroom extends Scene {
     this.endClassroomScene();
   }
 
+  shouldBlockPauseOpen() {
+    const closedOverlayFrame = this.registry.get("escClosedOverlayFrame");
+
+    if (closedOverlayFrame === this.game.loop.frame) {
+      return true;
+    }
+
+    const inventory = this.scene.get("InventoryOverlay");
+
+    if (inventory) {
+      if (inventory.isOpen) {
+        return true;
+      }
+    }
+
+    const knowledgeLog = this.scene.get("KnowledgeLogOverlay");
+
+    if (knowledgeLog) {
+      if (knowledgeLog.isOpen) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   openPauseMenu() {
+    if (this.shouldBlockPauseOpen()) {
+      return;
+    }
+
     if (!this.scene.isActive("PauseMenuOverlay")) {
       this.scene.launch("PauseMenuOverlay");
     }
@@ -637,6 +672,16 @@ export class Classroom extends Scene {
           text: "Got it.",
         },
         {
+          type: "say",
+          speaker: "Meryl",
+          text: "Come on.",
+        },
+        {
+          type: "say",
+          speaker: "Meryl",
+          text: "Let's get out of here.",
+        },
+        {
           type: "action",
           id: "startLeaveRoomObjective",
         },
@@ -745,6 +790,16 @@ export class Classroom extends Scene {
       });
     });
 
+    this.input.setDefaultCursor("default");
+
+    this.game.canvas.style.cursor = "default";
+
+    this.scene.start("PostClassroomHallway");
+
+    this.scene.bringToTop("KnowledgeLogOverlay");
+    this.scene.bringToTop("PauseMenuOverlay");
+    this.scene.bringToTop("SettingsOverlay");
+    this.scene.bringToTop("InventoryIconOverlay");
     // console.log("eoned")
   }
 }

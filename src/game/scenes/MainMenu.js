@@ -192,6 +192,24 @@ export class MainMenu extends Scene {
       return;
     }
 
+    if (chapterName === "test-post-classroom-hallway") {
+      this.input.setDefaultCursor("default");
+
+      if (this.game && this.game.canvas) {
+        this.game.canvas.style.cursor = "default";
+      }
+
+      this.scene.start("PostClassroomHallway", {
+        fromTestSave: true,
+      });
+
+      this.scene.bringToTop("KnowledgeLogOverlay");
+      this.scene.bringToTop("PauseMenuOverlay");
+      this.scene.bringToTop("SettingsOverlay");
+      this.scene.bringToTop("InventoryIconOverlay");
+      return;
+    }
+
     // Later, more chapter routing goes here.
     // For now, everything starts introduction-potion.
     this.scene.start("IntroductionPotion");
@@ -2328,6 +2346,44 @@ export class MainMenu extends Scene {
     crole6name.setVisible(false);
     crole6name.setDepth(depth.page_txt);
 
+    this.c_role_7 = this.add.text(
+      el_pos.credits.col2.x,
+      el_pos.credits.col2.y + el_pos.credits.credit_gap * 2,
+      "Coding & Additional Art",
+      {
+        fontFamily: "DogicaBold",
+        fontSize: `${el_pos.credits.cred_role_font}px`,
+        color: "#ffffff",
+        stroke: "#000000",
+        strokeThickness: 4,
+      },
+    );
+
+    const crole7 = this.c_role_7;
+
+    crole7.setAlpha(0);
+    crole7.setVisible(false);
+    crole7.setDepth(depth.page_txt);
+
+    this.c_role_7_name = this.add.text(
+      el_pos.credits.col2.x,
+      el_pos.credits.col2.y +
+        el_pos.credits.credit_gap * 2 +
+        el_pos.credits.cred_line_gap,
+      "Derek Lee",
+      {
+        fontFamily: "Dogica",
+        fontSize: `${el_pos.credits.cred_font}px`,
+        color: "#ffffff",
+        stroke: "#000000",
+        strokeThickness: 4,
+      },
+    );
+    const crole7name = this.c_role_7_name;
+    crole7name.setAlpha(0);
+    crole7name.setVisible(false);
+    crole7name.setDepth(depth.page_txt);
+
     this.credit_text.push(
       this.c_role_1,
       this.c_role_1_name,
@@ -2341,6 +2397,8 @@ export class MainMenu extends Scene {
       this.c_role_5_name,
       this.c_role_6,
       this.c_role_6_name,
+      this.c_role_7,
+      this.c_role_7_name,
     );
 
     // credits page objs
