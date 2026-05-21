@@ -725,6 +725,7 @@ export class IdCard extends Scene {
   create() {
     this.game.canvas.style.cursor = "default";
 
+    // reset if player dies in the fight scene cause they are shit at the game
     this.schoolAlarmStarted = false;
     this.schoolAlarmTweens = null;
     this.leftAlarm = null;

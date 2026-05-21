@@ -254,11 +254,90 @@ export class IntroductionPotion extends Scene {
     // console.log("something broke idk")
   }
 
+  playFloorTitle() {
+    return new Promise((resolve) => {
+      const blackScreen = this.add.rectangle(
+        0,
+        0,
+        main_width,
+        main_height,
+        0x000000,
+        1,
+      );
+
+      blackScreen.setOrigin(0, 0);
+      blackScreen.setScrollFactor(0);
+      blackScreen.setDepth(999998);
+      blackScreen.setAlpha(1);
+
+      const title = this.add.text(main_width / 2, main_height / 2, "FLOOR 1", {
+        fontFamily: "DogicaBold",
+        fontSize: "46px",
+        color: "#ffffff",
+        stroke: "#000000",
+        strokeThickness: 8,
+        align: "center",
+      });
+
+      title.setOrigin(0.5);
+      title.setScrollFactor(0);
+      title.setDepth(999999);
+      title.setAlpha(0);
+
+      this.tweens.add({
+        targets: title,
+        alpha: 1,
+        duration: 750,
+        ease: "Sine.Out",
+        onComplete: () => {
+          this.time.delayedCall(900, () => {
+            this.tweens.add({
+              targets: title,
+              alpha: 0,
+              duration: 650,
+              ease: "Sine.In",
+              onComplete: () => {
+                this.tweens.add({
+                  targets: blackScreen,
+                  alpha: 0,
+                  duration: 800,
+                  ease: "Sine.Out",
+                  onComplete: () => {
+                    title.destroy();
+                    blackScreen.destroy();
+                    resolve();
+                  },
+                });
+              },
+            });
+          });
+        },
+      });
+    });
+  }
+
   create() {
     this.game.canvas.style.cursor = "default";
 
-    this.bg = this.add.rectangle(0, 0, main_width, main_height, 0x211a31, 1);
-    this.bg.setOrigin(0, 0);
+    this.bg = this.add.image(
+      main_width / 2,
+      main_height / 2,
+      "intro-potion-lab-background",
+    );
+
+    this.bg.setOrigin(0.5);
+    this.bg.setDepth(-20);
+
+    const bgScaleX = main_width / this.bg.width;
+    const bgScaleY = main_height / this.bg.height;
+
+    let bgScale = bgScaleX;
+
+    if (bgScaleY > bgScaleX) {
+      bgScale = bgScaleY;
+    }
+
+    this.bg.setScale(bgScale);
 
     this.tCinB = this.add.rectangle(0, 0, main_width, 125, 0x000000, 1);
 
@@ -328,14 +407,14 @@ export class IntroductionPotion extends Scene {
     // character centered
     this.character = this.add.image(
       main_width / 2,
-      main_height / 2,
+      main_height / 2 + 100,
       "intro-potion-character",
     );
 
     this.character.setOrigin(0.5);
     this.character.setDepth(5);
 
-    this.character.setScale(650 / this.character.height);
+    this.character.setScale(1150 / this.character.height);
 
     const the = main_width / 2 - 160;
     const ok = main_height / 2 + 90;
@@ -388,7 +467,9 @@ export class IntroductionPotion extends Scene {
       },
     });
 
-    this.dialogue.start();
+    this.playFloorTitle().then(() => {
+      this.dialogue.start();
+    });
 
     this.input.keyboard.on("keydown-ESC", () => {
       if (!this.scene.isActive("PauseMenuOverlay")) {

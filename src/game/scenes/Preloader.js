@@ -67,12 +67,26 @@ export class Preloader extends Scene {
     this.load.image("knowledge-brute-back", "monsters/brute/back.png");
     this.load.image("knowledge-brute-left", "monsters/brute/left.png");
 
-    // KNOWLEDGE LOG - BOSS
-    this.load.image("knowledge-boss-icon", "monsters/boss/icon.png");
-    this.load.image("knowledge-boss-front", "monsters/boss/front.png");
-    this.load.image("knowledge-boss-right", "monsters/boss/right.png");
-    this.load.image("knowledge-boss-back", "monsters/boss/back.png");
-    this.load.image("knowledge-boss-left", "monsters/boss/left.png");
+    // KNOWLEDGE LOG - DOMBIS
+    this.load.image("knowledge-dombis-icon", "monsters/dombis/icon.png");
+    this.load.image("knowledge-dombis-front", "monsters/dombis/front.png");
+    this.load.image("knowledge-dombis-right", "monsters/dombis/right.png");
+    this.load.image("knowledge-dombis-back", "monsters/dombis/back.png");
+    this.load.image("knowledge-dombis-left", "monsters/dombis/left.png");
+
+    // KNOWLEDGE LOG - ALPHA
+    this.load.image("knowledge-alpha-icon", "monsters/alpha/icon.png");
+    this.load.image("knowledge-alpha-front", "monsters/alpha/front.png");
+    this.load.image("knowledge-alpha-right", "monsters/alpha/right.png");
+    this.load.image("knowledge-alpha-back", "monsters/alpha/back.png");
+    this.load.image("knowledge-alpha-left", "monsters/alpha/left.png");
+
+    // KNOWLEDGE LOG - JUDSON
+    this.load.image("knowledge-judson-icon", "monsters/judson/icon.png");
+    this.load.image("knowledge-judson-front", "monsters/judson/front.png");
+    this.load.image("knowledge-judson-right", "monsters/judson/right.png");
+    this.load.image("knowledge-judson-back", "monsters/judson/back.png");
+    this.load.image("knowledge-judson-left", "monsters/judson/left.png");
 
     // knowedlge log UI
     this.load.image(
@@ -92,6 +106,45 @@ export class Preloader extends Scene {
       "intro-potion-character",
       "scenes/introductionpotion/character.png",
     );
+
+    this.load.image(
+      "intro-potion-lab-background",
+      "scenes/introductionpotion/background-lab.png",
+    );
+
+    // FLORO 3
+    this.load.image(
+      "floor-3-background",
+      "scenes/floor3/floor3-background.png",
+    );
+
+    // DOMBIS EFECTS
+    this.load.image(
+      "effect-dombis-projectile",
+      "skill-effects/dombis-projectile.png",
+    );
+
+    // FLOOR 5
+    this.load.image(
+      "floor-5-background",
+      "scenes/floor-5/floor-5-background.png",
+    );
+    this.load.image("alpha-front", "monsters/alpha/front.png");
+    this.load.image("floor-5-lockers", "scenes/floor-5/lockers.png");
+
+    this.load.image(
+      "effect-dombis-projectile-splat",
+      "skill-effects/dombis-projectile-effect.png",
+    );
+
+    // ALPHA SKIL EFFECTS
+    this.load.image("effect-alpha-slash", "skill-effects/alpha-slash.png");
+    this.load.image("effect-long-hand", "skill-effects/long-hand.png");
+    this.load.image("effect-brute-crack", "skill-effects/crack.png");
+
+    this.load.json("dialogue-floor5-alpha", "dialogues/floor5/alpha.json");
+
+    this.load.json("dialogue-floor3-dombis", "dialogues/floor3/dombis.json");
 
     this.load.image(
       "intro-potion-potion",
@@ -120,6 +173,26 @@ export class Preloader extends Scene {
     this.load.image("id-card-kim", "scenes/id-card/kim.png");
     this.load.image("id-card-meryl", "scenes/id-card/meryl.png");
 
+    // CLASSOROM BACKGROUND
+    this.load.image(
+      "classroom-new-background",
+      "scenes/classroom/classroom-background.png",
+    );
+
+    // FLOOR 2
+    this.load.image(
+      "floor2-background-2",
+      "scenes/floor2/floor2-background-2.png",
+    );
+
+    this.load.image("floor2-guard", "scenes/floor2/guard.png");
+
+    this.load.json("dialogue-floor2-guard", "dialogues/floor2/guard.json");
+
+    this.load.image("floor2-locker-2", "scenes/floor2/floor2-locker-2.png");
+
+    this.load.image("floor2-door-2", "scenes/floor2/floor2-door-2.png");
+
     // FIGHT CPOST HALLWAY IMAGES
     this.load.image(
       "background-center",
@@ -137,7 +210,40 @@ export class Preloader extends Scene {
       "scenes/classroom/inventory-unlocked.png",
     );
 
+    this.load.image(
+      "knowledge-unlocked",
+      "scenes/knowledge-log/knowledge-unlocked.png",
+    );
+
     this.load.json("dialogue-classroom", "dialogues/classroom/dialogue.json");
+    this.load.json(
+      "dialogue-post-first-battle",
+      "dialogues/post-first-battle/dialogue.json",
+    );
+    this.load.json(
+      "dialogue-new-classroom",
+      "dialogues/new-classroom/dialogue.json",
+    );
+    /// CLASSOROM BAG LOOT
+    this.load.image(
+      "student-backpack-1",
+      "scenes/new-classroom/student-backpack-1.png",
+    );
+
+    this.load.image(
+      "student-backpack-2",
+      "scenes/new-classroom/student-backpack-2.png",
+    );
+
+    this.load.image(
+      "student-backpack-3",
+      "scenes/new-classroom/student-backpack-3.png",
+    );
+
+    // STAIRWCASE
+    this.load.image("stairwell-stairs", "scenes/stairwell/stairs.png");
+
+    this.load.image("stairwell-door", "scenes/stairwell/stair-door.png");
 
     //dialogue icons top
     this.load.image("classroom-kim-icon", "scenes/classroom/kim-icon.png");

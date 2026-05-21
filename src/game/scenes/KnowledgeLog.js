@@ -1,4 +1,3 @@
-// used AI to help make the boiler plate of this code, coudlt figure out how to start this file and make it work. was hard
 import Phaser, { Scene } from "phaser";
 import { loadGameData } from "../db";
 import { mobs, categories } from "../mob_data";
@@ -10,13 +9,9 @@ const el_config = {
   },
 
   usage: {
-    // basically,
-    // we havent added a way to get knowledge log yet in the game so its impossible to test
-    // so we have to have a hotkey for dev only or else we cant test it
-    hotkey: "K",
+    hotkey: null,
 
-    // !! CHANGE TO FALSE LATER AND PROBABLY REMOVE IT
-    d_unlocked: true,
+    d_unlocked: false,
     d_allscene: true,
 
     data_unlockname: "knowledgeLogUnlocked",
@@ -29,8 +24,7 @@ const el_config = {
     ],
   },
 
-  //!! TEMPORARY REMEMBER TO DELETEE LATER
-  devEncounteredEnemyIds: ["walker"],
+  devEncounteredEnemyIds: [],
 
   layout: {
     window: { x: 137, y: 78, w: 1326, h: 745 },
@@ -92,7 +86,6 @@ export class KnowledgeLogOverlay extends Scene {
 
     this.cnfg = el_config;
 
-    // off by default or we cooked
     this.isOpen = false;
     // show the normal mobs first nott the bosses
     this.curr_cat_id = "normal";
@@ -117,12 +110,6 @@ export class KnowledgeLogOverlay extends Scene {
 
     // put the entie overlay above evreyrthing
     this.root.setDepth(999999);
-
-    // will add a butotn to open later TOO but using hotkey for now
-    this.input.keyboard.on("keydown-K", () => {
-      // window.alert("OEPNIEINEN")
-      this.toggle();
-    });
 
     this.input.keyboard.on("keydown-ESC", () => {
       if (this.isOpen) {
@@ -592,6 +579,13 @@ export class KnowledgeLogOverlay extends Scene {
 
       this.root.add(not_encount);
     } else {
+      const isBossSelected = String(mob_curr.category || "")
+        .toLowerCase()
+        .includes("boss");
+
+      if (isBossSelected) {
+        this.sideIndex = 0;
+      }
       const m_name = this.add.text(
         l.details.x,
         l.details.y,
@@ -841,105 +835,103 @@ export class KnowledgeLogOverlay extends Scene {
 
       this.root.add(sprite);
 
-      // CONTROLS FOR CHANGE VIEW (LEFT))
-      const arrow_l = this.add.text(l.side_ctrls.leftX, l.side_ctrls.y, "<", {
-        fontSize: `${l.side_ctrls.arrowFont}px`,
-
-        fontFamily: "DogicaBold",
-        color: "#ffffff",
-        // stroke: "#000000",
-        stroke: "#000000",
-        strokeThickness: 4,
-      });
-
-      arrow_l.setOrigin(0, 0);
-
-      arrow_l.setInteractive({ useHandCursor: false });
-
-      // re draw with new side 9(NEW VIEW)
-      arrow_l.on("pointerdown", () => {
-        this.sideIndex = this.sideIndex - 1;
-
-        if (this.sideIndex < 0) {
-          this.sideIndex = 3;
-        }
-
-        this.render();
-      });
-
-      // hovering
-      arrow_l.on("pointerover", () => {
-        arrow_l.setAlpha(0.75);
-        this.input.setDefaultCursor("pointer");
-      });
-
-      arrow_l.on("pointerout", () => {
-        arrow_l.setAlpha(1);
-        this.input.setDefaultCursor("default");
-      });
-
-      // attach
-      this.root.add(arrow_l);
-
-      const label_side = this.add.text(
-        l.side_ctrls.labelX,
-
-        l.side_ctrls.y + 16,
-        side_textlabel,
-        {
-          align: "center",
+      if (!isBossSelected) {
+        // CONTROLS FOR CHANGE VIEW (LEFT))
+        const arrow_l = this.add.text(l.side_ctrls.leftX, l.side_ctrls.y, "<", {
+          fontSize: `${l.side_ctrls.arrowFont}px`,
 
           fontFamily: "DogicaBold",
-          fontSize: `${l.side_ctrls.labelFont}px`,
           color: "#ffffff",
           stroke: "#000000",
           strokeThickness: 4,
-        },
-      );
+        });
 
-      label_side.setOrigin(0.5, 0);
+        arrow_l.setOrigin(0, 0);
 
-      this.root.add(label_side);
+        arrow_l.setInteractive({ useHandCursor: false });
 
-      const arrow_r = this.add.text(l.side_ctrls.rightX, l.side_ctrls.y, ">", {
-        fontSize: `${l.side_ctrls.arrowFont}px`,
+        arrow_l.on("pointerdown", () => {
+          this.sideIndex = this.sideIndex - 1;
 
-        fontFamily: "DogicaBold",
-        color: "#ffffff",
-        // stroke: "#000000",
-        stroke: "#000000",
-        strokeThickness: 4,
-      });
+          if (this.sideIndex < 0) {
+            this.sideIndex = 3;
+          }
 
-      arrow_r.setOrigin(0, 0);
+          this.render();
+        });
 
-      //C  LOSE
+        arrow_l.on("pointerover", () => {
+          arrow_l.setAlpha(0.75);
+          this.input.setDefaultCursor("pointer");
+        });
 
-      arrow_r.setInteractive({ useHandCursor: false });
+        arrow_l.on("pointerout", () => {
+          arrow_l.setAlpha(1);
+          this.input.setDefaultCursor("default");
+        });
 
-      // re draw with new side 9(NEW VIEW)
-      arrow_r.on("pointerdown", () => {
-        this.sideIndex = this.sideIndex + 1;
+        this.root.add(arrow_l);
 
-        if (this.sideIndex > 3) {
-          this.sideIndex = 0;
-        }
+        const label_side = this.add.text(
+          l.side_ctrls.labelX,
 
-        this.render();
-      });
+          l.side_ctrls.y + 16,
+          side_textlabel,
+          {
+            align: "center",
 
-      // hovering
-      arrow_r.on("pointerover", () => {
-        arrow_r.setAlpha(0.75);
-        this.input.setDefaultCursor("pointer");
-      });
+            fontFamily: "DogicaBold",
+            fontSize: `${l.side_ctrls.labelFont}px`,
+            color: "#ffffff",
+            stroke: "#000000",
+            strokeThickness: 4,
+          },
+        );
 
-      arrow_r.on("pointerout", () => {
-        arrow_r.setAlpha(1);
-        this.input.setDefaultCursor("default");
-      });
+        label_side.setOrigin(0.5, 0);
 
-      this.root.add(arrow_r);
+        this.root.add(label_side);
+
+        const arrow_r = this.add.text(
+          l.side_ctrls.rightX,
+          l.side_ctrls.y,
+          ">",
+          {
+            fontSize: `${l.side_ctrls.arrowFont}px`,
+
+            fontFamily: "DogicaBold",
+            color: "#ffffff",
+            stroke: "#000000",
+            strokeThickness: 4,
+          },
+        );
+
+        arrow_r.setOrigin(0, 0);
+
+        arrow_r.setInteractive({ useHandCursor: false });
+
+        arrow_r.on("pointerdown", () => {
+          this.sideIndex = this.sideIndex + 1;
+
+          if (this.sideIndex > 3) {
+            this.sideIndex = 0;
+          }
+
+          this.render();
+        });
+
+        arrow_r.on("pointerover", () => {
+          arrow_r.setAlpha(0.75);
+          this.input.setDefaultCursor("pointer");
+        });
+
+        arrow_r.on("pointerout", () => {
+          arrow_r.setAlpha(1);
+          this.input.setDefaultCursor("default");
+        });
+
+        this.root.add(arrow_r);
+      }
     }
 
     const close_this = this.add.text(

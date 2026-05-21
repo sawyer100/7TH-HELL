@@ -4,7 +4,7 @@ const walker = {
   category: "normal",
 
   stats: {
-    HP: "100",
+    HP: "90",
     STAM: "80",
     SPD: "70",
     DEF: "0",
@@ -17,7 +17,7 @@ const walker = {
       description: "Viciously attacks a survivor",
       staminaCost: 18,
       target: "enemy",
-      damage: 18,
+      damage: 15,
       staminaDamage: 8,
       effectId: "zombie-maul",
       attackType: "melee",
@@ -41,8 +41,8 @@ const runner = {
 
   stats: {
     HP: "70",
-    STAM: "110",
-    SPD: "95",
+    STAM: "150",
+    SPD: "90",
     DEF: "0",
   },
 
@@ -53,7 +53,7 @@ const runner = {
       description: "Lunges into your face and you DIE.",
       staminaCost: 26,
       target: "enemy",
-      damage: 14,
+      damage: 10,
       staminaDamage: 16,
       effectId: "zombie-maul",
       attackType: "melee",
@@ -91,8 +91,8 @@ const brute = {
         "Slams the ground so hard it feels like 500lbs person drop from 2nd floor.",
       staminaCost: 36,
       target: "enemy",
-      damage: 35,
-      staminaDamage: 12,
+      damage: 23,
+      staminaDamage: 5,
       effectId: null,
       attackType: "melee",
     },
@@ -103,9 +103,9 @@ const brute = {
       description: "Runs into you like a bull.",
       staminaCost: 42,
       target: "enemy",
-      damage: 50,
-      staminaDamage: 18,
-      effectId: null,
+      damage: 30,
+      staminaDamage: 10,
+      effectId: "brute-charge-crack",
       attackType: "melee",
     },
   ],
@@ -120,44 +120,157 @@ const brute = {
   icon: "knowledge-brute-icon",
 };
 
-const boss = {
-  id: "boss",
-  name: "BOSS",
+const dombis = {
+  id: "dombis",
+  name: "DOMBIS",
+  category: "bosses",
+
+  stats: {
+    HP: "400",
+    STAM: "120",
+    SPD: "35",
+    DEF: "0",
+  },
+
+  skills: [
+    {
+      id: "throw_up",
+      name: "THROW UP",
+      weight: 50,
+      description: "Throws up on you, ew.",
+      staminaCost: 30,
+      target: "enemy",
+      damage: 40,
+      staminaDamage: 20,
+      effectId: "dombis-spit",
+      attackType: "ranged",
+      ranged: true,
+    },
+    {
+      id: "hard_slap",
+      name: "HARD SLAP",
+      weight: 50,
+      description: "Spins around and slaps your cheek so hard you get bruised.",
+      staminaCost: 36,
+      target: "enemy",
+      damage: 35,
+      staminaDamage: 5,
+      effectId: null,
+      attackType: "melee",
+    },
+  ],
+
+  sprites: {
+    front: "knowledge-dombis-front",
+    right: "knowledge-dombis-right",
+    back: "knowledge-dombis-back",
+    left: "knowledge-dombis-left",
+  },
+
+  icon: "knowledge-dombis-icon",
+};
+
+const judson = {
+  id: "judson",
+  name: "JUDSON",
   category: "bosses",
 
   stats: {
     HP: "300",
-    STAM: "120",
-    SPD: "35",
+    STAM: "100",
+    SPD: "80",
     DEF: "5",
   },
 
   skills: [
     {
-      id: "boss_hellfire",
-      name: "HELLFIRE",
-      description: "placehodler not ready",
-      staminaCost: 50,
+      id: "potion_throw",
+      name: "THROW POTION",
+      weight: 50,
+      description: "His potion blows you up.",
+      staminaCost: 20,
       target: "enemy",
-      damage: 60,
-      staminaDamage: 20,
+      damage: 40,
+      staminaDamage: 10,
       effectId: null,
       attackType: "ranged",
       ranged: true,
     },
+    {
+      id: "right_hook",
+      name: "RIGHT HOOK",
+      weight: 50,
+      description: "Right hook knocks the wind out of you.",
+      staminaCost: 30,
+      target: "enemy",
+      damage: 30,
+      staminaDamage: 5,
+      effectId: null,
+      attackType: "melee",
+    },
   ],
 
   sprites: {
-    front: "knowledge-boss-front",
-    right: "knowledge-boss-right",
-    back: "knowledge-boss-back",
-    left: "knowledge-boss-left",
+    front: "knowledge-judson-front",
+    right: "knowledge-judson-right",
+    back: "knowledge-judson-back",
+    left: "knowledge-judson-left",
   },
 
-  icon: "knowledge-boss-icon",
+  icon: "knowledge-judson-icon",
 };
 
-export const mobs = [walker, runner, brute, boss];
+const alpha = {
+  id: "alpha",
+  name: "ALPHA",
+  category: "bosses",
+
+  stats: {
+    HP: "250",
+    STAM: "150",
+    SPD: "50",
+    DEF: "0",
+  },
+
+  skills: [
+    {
+      id: "long_slap",
+      name: "LONG SLAP",
+      weight: 70,
+      description: "Extremely long hands reach down to slap you.",
+      staminaCost: 30,
+      target: "enemy",
+      damage: 30,
+      staminaDamage: 25,
+      effectId: "alpha-long-slap",
+      attackType: "ranged",
+      ranged: true,
+    },
+    {
+      id: "step_on_you",
+      name: "STEP ON YOU",
+      weight: 30,
+      description: "Steps on you with tremendous force.",
+      staminaCost: 40,
+      target: "enemy",
+      damage: 20,
+      staminaDamage: 10,
+      effectId: null,
+      attackType: "melee",
+    },
+  ],
+
+  sprites: {
+    front: "knowledge-alpha-front",
+    right: "knowledge-alpha-right",
+    back: "knowledge-alpha-back",
+    left: "knowledge-alpha-left",
+  },
+
+  icon: "knowledge-alpha-icon",
+};
+
+export const mobs = [walker, runner, brute, dombis, alpha, judson];
 
 export const categories = [
   {

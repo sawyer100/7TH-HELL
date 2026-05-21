@@ -94,4 +94,8 @@ export const chapterTeams = {
   classroom: ["kim", "meryl"],
   "post-classroom-hallway": ["kim", "meryl"],
   "test-post-classroom-hallway": ["kim", "meryl"],
+  "post-first-battle": ["kim", "meryl"],
+  "floor2-starthallway": ["kim", "meryl"],
+  "floor3-starthallway": ["kim", "meryl"],
+  "floor5-boss": ["kim", "meryl"],
 };

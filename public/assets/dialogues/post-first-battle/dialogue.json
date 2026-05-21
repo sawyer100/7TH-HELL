@@ -1,0 +1,39 @@
+{
+  "id": "post-first-battle",
+  "lines": [
+    {
+      "type": "say",
+      "speaker": "Kim",
+      "text": "OMG we won I was so scared."
+    },
+    {
+      "type": "say",
+      "speaker": "Meryl",
+      "text": "fr, grab what it dropped, it might be useful?"
+    }
+  ],
+  "allLootCollectedLines": [
+    {
+      "type": "say",
+      "speaker": "Meryl",
+      "text": "That's everything, let's move down the hall."
+    },
+    {
+      "type": "say",
+      "speaker": "Kim",
+      "text": "Okay let's go."
+    }
+  ],
+  "doorLines": [
+    {
+      "type": "say",
+      "speaker": "Meryl",
+      "text": "Let's check out the classroom, maybe we can find something useful in there?"
+    },
+    {
+      "type": "say",
+      "speaker": "Kim",
+      "text": "Alright then."
+    }
+  ]
+}

@@ -7,7 +7,12 @@ import {
   battleArmors,
 } from "../battle_item_data";
 import { getBattleArea } from "../battle_area_data";
-import { loadGameData, saveGameData, resetForFirstBattleDefeat } from "../db";
+import {
+  loadGameData,
+  saveGameData,
+  resetForFirstBattleDefeat,
+  recordFirstBattleWin,
+} from "../db";
 
 import { BattleEffects } from "../battle_effects";
 
@@ -110,6 +115,19 @@ const zombienamelist = [
   "WYATT",
   "ZANE",
   "ZAIN",
+  "IVORY",
+  "BADU",
+  "SAWYER",
+  "CAPTAIN",
+  "GISELLE",
+  "WINTER",
+  "KATARINA",
+  "STELLA",
+  "RAT",
+  "TEXAS",
+  "LURCO",
+  "AMIYA",
+  "HEART",
 ];
 
 const ui = {
@@ -143,6 +161,10 @@ export class BattleScene extends Scene {
     this.area = "school-hallway";
     this.chapterName = "post-classroom-hallway";
     this.enemySetup = [];
+    this.battleReturnScene = null;
+    this.battleReturnData = null;
+    this.battleLoseScene = null;
+    this.battleLoseData = null;
 
     if (data) {
       if (data.area) {
@@ -155,6 +177,22 @@ export class BattleScene extends Scene {
 
       if (data.enemies) {
         this.enemySetup = data.enemies;
+      }
+
+      if (data.battleReturnScene) {
+        this.battleReturnScene = data.battleReturnScene;
+      }
+
+      if (data.battleReturnData) {
+        this.battleReturnData = data.battleReturnData;
+      }
+
+      if (data.battleLoseScene) {
+        this.battleLoseScene = data.battleLoseScene;
+      }
+
+      if (data.battleLoseData) {
+        this.battleLoseData = data.battleLoseData;
       }
     }
   }
@@ -542,8 +580,13 @@ export class BattleScene extends Scene {
     // later non first battles can restart checkpoint / game herer
   }
 
-  playSkillVisualEffect(skill, targetDisplay, outcome = null) {
-    // no outcome by dewfault
+  playSkillVisualEffect(
+    skill,
+    targetDisplay,
+    outcome = null,
+    userDisplay = null,
+    onImpact = null,
+  ) {
     if (!skill) {
       return;
     }
@@ -552,18 +595,19 @@ export class BattleScene extends Scene {
       return;
     }
 
-    // actual outcome vals
     let healAmount = skill.heal || 0;
-    let staminaAmount = skill.staminaRecover || 0;
+    let staminaAmount = skill.stamRec || 0;
 
     if (outcome) {
       healAmount = outcome.heal || healAmount;
-      staminaAmount = outcome.staminaRecover || staminaAmount;
+      staminaAmount = outcome.stamRec || staminaAmount;
     }
 
     BattleEffects.play(this, skill.effectId, targetDisplay, {
       heal: healAmount,
-      staminaRecover: staminaAmount,
+      stamRec: staminaAmount,
+      attackerDisplay: userDisplay,
+      onImpact,
     });
   }
 
@@ -1015,11 +1059,21 @@ export class BattleScene extends Scene {
       defense = 0;
     }
 
+    let enemyName = this.getRandomZombieDisplayName();
+
+    if (mob.id === "dombis") {
+      enemyName = "DOMBIS";
+    }
+
+    if (mob.id === "alpha") {
+      enemyName = "ALPHA";
+    }
+
     return {
       id: `enemy-${mob.id}-${index}`,
       baseId: mob.id,
       team: "enemy",
-      name: this.getRandomZombieDisplayName(),
+      name: enemyName,
       mobTypeName: mob.name,
       icon: mob.icon,
       spriteKey: this.getEnemySpriteKey(mob),
@@ -1129,20 +1183,9 @@ export class BattleScene extends Scene {
       });
     }
 
-    // extra / fallabck / basics in case missings data
     if (skills.length === 0) {
-      skills.push({
-        id: `${mob.id}_attack`,
-        name: "ATTACK",
-        description: "Basic enemy attack.",
-        staminaCost: 10,
-        target: "enemy",
-        damage: 10,
-        staminaDamage: 5,
-        effectId: null,
-        attackType: "melee",
-        ranged: false,
-      });
+      /// handle later idk
+      console.log("no skll lol");
     }
 
     return skills;
@@ -1160,9 +1203,10 @@ export class BattleScene extends Scene {
     // skilsl that can be affored basedd off stamina RIHGT NOW
     const usableSkills = [];
 
-    // THROUGH EVERY SKILL
     enemy.skills.forEach((skill) => {
-      const staminaCost = Number(skill.staminaCost || 0);
+      // const ok = skill.staminaCost
+      // const staminaCost = Number(ok);
+      const staminaCost = Number(skill.staminaCost);
 
       // use if enough  staina
       if (staminaCost <= enemy.stamina) {
@@ -1196,6 +1240,16 @@ export class BattleScene extends Scene {
     });
 
     let roll = Math.random() * totalWeight;
+
+    // roll = 0.5 * 100 = 50
+
+    // skill 1 weight 35
+
+    // skill 2 weight 65
+
+    // 50 - 35 =  25, above 0 so skip
+
+    // 25 (roll from previous ccalculation) - 65 = under 0 so choose skill 2
 
     for (let i = 0; i < choices.length; i += 1) {
       const skill = choices[i];
@@ -1232,7 +1286,6 @@ export class BattleScene extends Scene {
     return found;
   }
 
-  // Creates both center displays and side/team target displays for every unit.
   makeUnitDisplaysEverthing() {
     // console.log("werewr")
     this.playerUnits.forEach((unit, index) => {
@@ -1269,37 +1322,64 @@ export class BattleScene extends Scene {
       unit.teamDisplay = this.createUnitDisplay(unit, teamX, teamY, "team");
 
       this.setDisplayVisible(unit.centerDisplay, false);
-      
+
       this.setDisplayVisible(unit.teamDisplay, false);
     });
   }
 
-  // Creates the visual container for one unit, including name, status, bars, sprite, and targeting input.
+  // status thing above charcacters/units
   createUnitDisplay(unit, x, y, mode) {
     const display = {};
 
     display.mode = mode;
     display.baseX = x;
+
     display.baseY = y;
 
     display.root = this.add.container(x, y);
-    display.root.setDepth(mode === "center" ? 40 : 38);
+
+    let depth = 38;
+
+    if (mode === "center") {
+      depth = 40;
+    }
+
+    display.root.setDepth(depth);
 
     const barW = ui.barcenterW;
+
     const barH = ui.barcenterH;
 
     const nameFont = ui.centerNameFont;
-    const targetHeight = 300;
 
     display.barW = barW;
     display.barH = barH;
 
-    // Relative offsets place UI elements above the sprite inside the unit container.
-    const statusY = -430;
-    const nameY = -392;
-    const hpY = -350;
-    const stY = -326;
+    /// relative offset forr status containers above units
+    let statusY = -430;
+    let nameY = -392;
+    let hpY = -350;
+    let stY = -326;
 
+    if (unit.baseId === "brute") {
+      statusY = -565;
+      nameY = -527;
+      hpY = -485;
+      stY = -461;
+    }
+    if (unit.baseId === "dombis") {
+      statusY = -650;
+      nameY = -612;
+      hpY = -570;
+      stY = -546;
+    }
+
+    if (unit.baseId === "alpha") {
+      statusY = 500; // inteniotaly lower than head
+      nameY = -682;
+      hpY = -640;
+      stY = -616;
+    }
     display.nameText = this.add.text(0, nameY, unit.name, {
       fontFamily: "DogicaBold",
       fontSize: nameFont,
@@ -1308,19 +1388,22 @@ export class BattleScene extends Scene {
       strokeThickness: 5,
       align: "center",
     });
+
     display.nameText.setOrigin(0.5);
 
     display.statusText = this.add.text(0, statusY, "", {
       fontFamily: "DogicaBold",
-      fontSize: mode === "center" ? "11px" : "10px",
+      fontSize: "11px",
       color: "#99ccff",
       stroke: "#000000",
       strokeThickness: 4,
       align: "center",
     });
+
     display.statusText.setOrigin(0.5);
 
     display.hpBg = this.add.rectangle(0, hpY, barW, barH, 0x220000, 1);
+
     display.hpBg.setOrigin(0.5);
 
     display.hpFill = this.add.rectangle(
@@ -1331,11 +1414,12 @@ export class BattleScene extends Scene {
       color_hpbar,
       1,
     );
+
     display.hpFill.setOrigin(0, 0.5);
 
     display.hpText = this.add.text(0, hpY - 3, "", {
       fontFamily: "DogicaBold",
-      fontSize: mode === "center" ? "13px" : "9px",
+      fontSize: "13px",
       color: "#ffffff",
       stroke: "#000000",
       strokeThickness: 3,
@@ -1343,6 +1427,7 @@ export class BattleScene extends Scene {
     display.hpText.setOrigin(0.5);
 
     display.stBg = this.add.rectangle(0, stY, barW, barH, 0x001b22, 1);
+
     display.stBg.setOrigin(0.5);
 
     display.stFill = this.add.rectangle(
@@ -1357,29 +1442,37 @@ export class BattleScene extends Scene {
 
     display.stText = this.add.text(0, stY - 3, "", {
       fontFamily: "DogicaBold",
-      fontSize: mode === "center" ? "13px" : "9px",
+      fontSize: "13px",
       color: "#ffffff",
       stroke: "#000000",
       strokeThickness: 3,
     });
     display.stText.setOrigin(0.5);
 
-    // Fall back to the unit icon if the configured battle sprite texture is missing.
     let spriteKey = unit.spriteKey;
 
-    if (!this.textures.exists(spriteKey)) {
-      spriteKey = unit.icon;
-    }
-
     display.sprite = this.add.image(0, 0, spriteKey);
+
     display.sprite.setOrigin(0.5, 1);
 
-    const scale = targetHeight / display.sprite.height;
+    let thh = 300;
+
+    if (unit.baseId === "brute") {
+      thh = thh * 1.5;
+    }
+    if (unit.baseId === "dombis") {
+      thh = thh * 1.8;
+    }
+    if (unit.baseId === "alpha") {
+      thh = thh * 2.8;
+    }
+
+    const scale = thh / display.sprite.height;
+
     display.sprite.setScale(scale);
 
     display.sprite.setInteractive({ useHandCursor: false });
 
-    // During targeting, hovering a sprite gives pointer feedback and highlights the possible target.
     display.sprite.on("pointerover", () => {
       if (this.selectedSkill) {
         this.input.setDefaultCursor("pointer");
@@ -1414,7 +1507,7 @@ export class BattleScene extends Scene {
     return display;
   }
 
-  // Safely toggles a unit display container.
+  // toggle nuit dplsay container
   setDisplayVisible(display, visible) {
     if (!display) {
       return;
@@ -1423,7 +1516,6 @@ export class BattleScene extends Scene {
     display.root.setVisible(visible);
   }
 
-  // Creates the fixed-screen container used for compact left/right rosters.
   sideRosterMaker() {
     this.sideRoot = this.add.container(0, 0);
     this.sideRoot.setDepth(160);
@@ -1431,26 +1523,38 @@ export class BattleScene extends Scene {
     this.sideRoot.setVisible(true);
   }
 
-  // Rebuilds side rosters from current unit state whenever health/active status changes.
+  // rebuidl roster whenrever health or smth changes
   updateSideRosters() {
     this.sideRoot.removeAll(true);
 
     this.createRosterSide("player", this.playerUnits, 50, 190);
+
     this.createRosterSide("enemy", this.enemyUnits, main_width - 315, 190);
   }
 
-  // Draws one team's side roster, including active/dead labels and mini resource bars.
   createRosterSide(team, units, startX, startY) {
     const orderedUnits = this.getOrderedRosterUnits(team, units);
+    // console.log("aaaaaaaa")
 
     orderedUnits.forEach((unit, index) => {
       const y = startY + index * 88;
 
-      // Active unit is highlighted separately from normal living and dead roster entries.
-      const isActive =
-        ((team === "player" && this.activePlayerUnit === unit) ||
-          (team === "enemy" && this.activeEnemyUnit === unit)) &&
-        unit.alive;
+      // different highlitght for center units
+      let isActive = false;
+
+      if (unit.alive) {
+        if (team === "player") {
+          if (this.activePlayerUnit === unit) {
+            isActive = true;
+          }
+        }
+
+        if (team === "enemy") {
+          if (this.activeEnemyUnit === unit) {
+            isActive = true;
+          }
+        }
+      }
 
       const isDead = !unit.alive;
       const nameColor = this.getTeamNameColor(unit.team);
@@ -1463,9 +1567,12 @@ export class BattleScene extends Scene {
 
       if (team === "player") {
         const iconX = startX + 30;
+
         const iconY = y + 30;
+
         const textX = startX + 82;
         const barX = startX + 82;
+
         const barW = 135;
 
         const iconBorder = this.add.rectangle(
@@ -1476,10 +1583,13 @@ export class BattleScene extends Scene {
           0x000000,
           0,
         );
+
         iconBorder.setOrigin(0.5);
+
         iconBorder.setStrokeStyle(4, borderColor, 1);
 
         const icon = this.add.image(iconX, iconY, unit.icon);
+
         icon.setOrigin(0.5);
         icon.setScale(46 / icon.height);
 
@@ -1533,6 +1643,7 @@ export class BattleScene extends Scene {
             fontSize: "16px",
             color: "#ffffff",
             stroke: "#000000",
+
             strokeThickness: 4,
           });
 
@@ -1557,10 +1668,13 @@ export class BattleScene extends Scene {
           });
 
           const hp = this.add.rectangle(barX, y + 38, barW, 8, color_hpbar, 1);
+
           hp.setOrigin(0, 0.5);
+
           hp.displayWidth = barW * (Math.max(0, unit.hp) / unit.maxHp);
 
           const st = this.add.rectangle(barX, y + 54, barW, 8, stambar_clr, 1);
+
           st.setOrigin(0, 0.5);
           st.displayWidth =
             barW * (Math.max(0, unit.stamina) / unit.maxStamina);
@@ -1581,25 +1695,37 @@ export class BattleScene extends Scene {
 
       if (team === "enemy") {
         const iconX = startX + 245;
-        const iconY = y + 30;
-        const textRightX = iconX - 70;
         const barW = 150;
+        const iconY = y + 30;
+
+        const textRightX = iconX - 70;
+
         const barX = textRightX - barW;
+
+        let iconBoxSize = 58;
+        let iconImageSize = 46;
+
+        if (unit.baseId === "brute") {
+          iconBoxSize = 84;
+          iconImageSize = 69;
+        }
 
         const iconBorder = this.add.rectangle(
           iconX,
           iconY,
-          58,
-          58,
+          iconBoxSize,
+          iconBoxSize,
           0x000000,
           0,
         );
         iconBorder.setOrigin(0.5);
+
         iconBorder.setStrokeStyle(4, borderColor, 1);
 
         const icon = this.add.image(iconX, iconY, unit.icon);
         icon.setOrigin(0.5);
-        icon.setScale(46 / icon.height);
+
+        icon.setScale(iconImageSize / icon.height);
 
         if (isDead) {
           icon.setAlpha(0.6);
@@ -1685,11 +1811,13 @@ export class BattleScene extends Scene {
           nameText.setOrigin(1, 0);
 
           const hp = this.add.rectangle(barX, y + 38, barW, 8, color_hpbar, 1);
+
           hp.setOrigin(0, 0.5);
           hp.displayWidth = barW * (Math.max(0, unit.hp) / unit.maxHp);
 
           const st = this.add.rectangle(barX, y + 54, barW, 8, stambar_clr, 1);
           st.setOrigin(0, 0.5);
+
           st.displayWidth =
             barW * (Math.max(0, unit.stamina) / unit.maxStamina);
 
@@ -1709,20 +1837,23 @@ export class BattleScene extends Scene {
     });
   }
 
-  // Shows off-center targetable teammates/enemies only when the camera is on that side view.
+  // shwo non cneter targetable guys owhen camera is on their side view
   updateTargetTeamDisplays(view) {
     this.playerUnits.forEach((unit) => {
       if (unit.teamDisplay) {
         let show = false;
 
+        // i fon left side show alive guys
         if (view === "left") {
           if (unit.alive) {
             if (unit !== this.activePlayerUnit) {
+              // sip the active center player (not part of roster)
               show = true;
             }
           }
         }
 
+        // makae rster
         this.setDisplayVisible(unit.teamDisplay, show);
       }
     });
@@ -1744,7 +1875,7 @@ export class BattleScene extends Scene {
     });
   }
 
-  // Refreshes every unit's alive/dead state, bars, rosters, and active-unit references.
+  // refresh unit alive or dead state / other stuff
   updateAllUnitVisuals() {
     this.allUnits.forEach((unit) => {
       this.updateUnitVisual(unit);
@@ -1761,10 +1892,11 @@ export class BattleScene extends Scene {
     this.updateSideRosters();
   }
 
-  // Builds a colored bottom-bar sentence describing a skill action.
+  // sklll acctno botom bar
+  // used during skills
   showSkillActionMessage(user, skill, target) {
     this.bottomRoot.setVisible(true);
-    this.bottomRoot.removeAll(true);
+    this.bottomRoot.removeAll(true); // remove other first
 
     this.bottomRoot.x = this.cameras.main.scrollX;
 
@@ -1798,13 +1930,15 @@ export class BattleScene extends Scene {
       });
 
       part.setOrigin(0, 0.5);
+
       this.bottomRoot.add(part);
 
-      x += part.width + 8;
+      x += part.width + 8; // insstaed of just a normla sentnaace it has diff parts for colors
     };
 
     addPart(user.name, this.getTeamNameColor(user.team));
     addPart(" used ", "#ffffff");
+
     addPart(skill.name, "#ffffff");
 
     if (target) {
@@ -1815,27 +1949,32 @@ export class BattleScene extends Scene {
     addPart(".", "#ffffff");
   }
 
-  // Applies health-based unit state changes and refreshes that unit's displays.
   updateUnitVisual(unit) {
-    // Death clears combat-only statuses and fades the unit display.
+    // clear status and fade dead losers
     if (unit.hp <= 0) {
       unit.hp = 0;
       unit.stamina = 0;
       unit.alive = false;
       unit.intent = null;
+
       unit.exhausted = false;
+      // unit.exhausted =
       unit.shieldHits = 0;
+
       unit.shieldReduction = 0;
 
       this.updateDisplayBars(unit, unit.centerDisplay);
+
       this.updateDisplayBars(unit, unit.teamDisplay);
 
       this.fadeDeadDisplay(unit.centerDisplay);
+
       this.fadeDeadDisplay(unit.teamDisplay);
     } else {
       unit.alive = true;
 
       this.updateDisplayBars(unit, unit.centerDisplay);
+
       this.updateDisplayBars(unit, unit.teamDisplay);
 
       if (unit.centerDisplay) {
@@ -1848,19 +1987,22 @@ export class BattleScene extends Scene {
     }
   }
 
-  // Updates HP/stamina bar widths, numeric labels, and visible status text for one display.
   updateDisplayBars(unit, display) {
     if (!display) {
       return;
     }
 
-    const hpRatio = Math.max(0, unit.hp) / unit.maxHp;
-    const staminaRatio = Math.max(0, unit.stamina) / unit.maxStamina;
+    /// fo r bars
+    const rats = Math.max(0, unit.hp) / unit.maxHp;
 
-    display.hpFill.displayWidth = display.barW * hpRatio;
-    display.stFill.displayWidth = display.barW * staminaRatio;
+    const staminarat = Math.max(0, unit.stamina) / unit.maxStamina;
+
+    display.hpFill.displayWidth = display.barW * rats;
+
+    display.stFill.displayWidth = display.barW * staminarat;
 
     display.hpText.setText(`${Math.max(0, unit.hp)}/${unit.maxHp}`);
+
     display.stText.setText(`${Math.max(0, unit.stamina)}/${unit.maxStamina}`);
 
     if (unit.shieldHits) {
@@ -1873,13 +2015,12 @@ export class BattleScene extends Scene {
       display.statusText.setText("");
     }
 
-    // Enemy center/target displays reveal their intended target so the player can plan around it.
     if (unit.team === "enemy") {
       if (display === unit.centerDisplay || this.currentView === "right") {
         this.ensureEnemyIntent(unit);
 
         if (unit.intent) {
-          const target = this.getUnitById(unit.intent.targetId);
+          const target = this.gettheIDofUnit(unit.intent.targetId);
 
           if (target) {
             display.statusText.setText(`ATTACKING ${target.name}`);
@@ -1890,7 +2031,7 @@ export class BattleScene extends Scene {
     this.refreshDisplayStatusIcons(unit, display);
   }
 
-  // Placeholder for future status icons; currently clears any existing icon.
+  // clears eexisting icon
   refreshDisplayStatusIcons(unit, display) {
     if (!display) {
       return;
@@ -1902,22 +2043,21 @@ export class BattleScene extends Scene {
     }
   }
 
-  // Placeholder for side-roster bleed icons; currently disabled.
+  // bleed icons //!!(not being used right now but keep)
   addSideBleedIcon(unit, x, y) {
     return null;
   }
 
-  // Visually dims a dead unit display.
   fadeDeadDisplay(display) {
     if (!display) {
       return;
     }
 
-    display.root.setAlpha(0.35);
+    display.root.setAlpha(0);
     display.sprite.clearTint(0x666666);
   }
 
-  // Swaps the active center unit for a team, optionally sliding the old/new displays in and out.
+  // swapa center unit with roaster unit
   showCenterUnit(unit, team, animate) {
     if (!unit) {
       return;
@@ -1929,9 +2069,11 @@ export class BattleScene extends Scene {
       return;
     }
 
-    // Player and enemy center slots animate in opposite horizontal directions.
+    // annimate in OPPOSite Horiztnoal driectoinxs
     let previous = this.activePlayerUnit;
+
     let exitOffset = -220;
+
     let enterOffset = -220;
 
     if (team === "enemy") {
@@ -1993,9 +2135,10 @@ export class BattleScene extends Scene {
     this.updateAllUnitVisuals();
   }
 
-  // Builds alternating player/enemy turn order, sorted by each side's speed.
+  // make turn order
   whichTurnNow() {
     const players = [];
+
     const enemies = [];
 
     this.playerUnits.forEach((unit) => {
@@ -2018,7 +2161,8 @@ export class BattleScene extends Scene {
       return b.speed - a.speed;
     });
 
-    // The fastest unit between the two sides decides which side starts the alternating order.
+    // fasetst unuit between the two decides
+
     let playerStarts = true;
 
     if (enemies.length > 0) {
@@ -2030,6 +2174,7 @@ export class BattleScene extends Scene {
     }
 
     const order = [];
+
     let playerIndex = 0;
     let enemyIndex = 0;
 
@@ -2061,7 +2206,6 @@ export class BattleScene extends Scene {
     this.turnIndex = 0;
   }
 
-  // Clears legacy turn-order text; the current UI draws turn order inside the bottom panel.
   makeListofturnOrders() {
     if (this.turnOrderText) {
       this.turnOrderText.destroy();
@@ -2069,7 +2213,6 @@ export class BattleScene extends Scene {
     }
   }
 
-  // Chooses an enemy's intended target while avoiding the same target twice when possible.
   chooseEnemyIntentTarget(enemy, enemyIndex, alivePlayers) {
     if (!alivePlayers) {
       return null;
@@ -2099,11 +2242,10 @@ export class BattleScene extends Scene {
       }
     }
 
-    enemy.lastTargetId = target.id;
+    enemy.lastTargetId = target.id; // save last target so yuo dont pick the same guy twice
     return target;
   }
 
-  // Inserts any earned extra player turns directly after that unit's normal turn.
   applyExtraTurnsToTurnOrder() {
     const extraUnits = [];
 
@@ -2127,7 +2269,6 @@ export class BattleScene extends Scene {
     });
   }
 
-  // Lazily creates an enemy intent if one is missing and there are valid player targets.
   ensureEnemyIntent(enemy) {
     if (!enemy) {
       return;
@@ -2141,43 +2282,55 @@ export class BattleScene extends Scene {
       return;
     }
 
-    const alivePlayers = this.getAlivePlayers();
+    const alivePlayers = this.whoAliveRightNow();
+
+    const enemyIndex = this.enemyUnits.indexOf(enemy);
 
     if (!alivePlayers || alivePlayers.length === 0) {
       return;
     }
 
-    const enemyIndex = this.enemyUnits.indexOf(enemy);
     const target = this.chooseEnemyIntentTarget(
       enemy,
       enemyIndex,
       alivePlayers,
     );
 
+    let targetId = null;
+
+    if (target) {
+      targetId = target.id;
+    }
+
     enemy.intent = {
       skill: this.getEnemyChosenSkill(enemy),
-      targetId: target ? target.id : null,
+      targetId,
     };
   }
 
-  // Preselects each living enemy's skill and target for the upcoming round.
   whoEnemyGonnaKill() {
-    const alivePlayers = this.getAlivePlayers();
+    const alivePlayers = this.whoAliveRightNow();
 
     this.enemyUnits.forEach((enemy, index) => {
       if (enemy.alive) {
         const skill = this.getEnemyChosenSkill(enemy);
         const target = this.chooseEnemyIntentTarget(enemy, index, alivePlayers);
 
+        let targetId = null;
+
+        if (target) {
+          targetId = target.id;
+        }
+
         enemy.intent = {
           skill,
-          targetId: target ? target.id : null,
+          targetId,
         };
       }
     });
   }
 
-  // Advances battle flow to the next living unit, starts new rounds, and hands control to player/enemy logic.
+  // advance battle flwo
   startNextTurn() {
     if (this.battleEnded) {
       return;
@@ -2194,13 +2347,14 @@ export class BattleScene extends Scene {
       return;
     }
 
-    // When everyone has acted, begin a new round and refresh stamina, intents, and turn order.
+    // aftter evryeboy has done smth, new round and refresh stamina intents and order
     if (this.turnIndex >= this.turnOrder.length) {
       this.roundNumber += 1;
       this.recoverAllUnitsAtRoundEnd();
       this.whoEnemyGonnaKill();
       this.whichTurnNow();
       this.applyExtraTurnsToTurnOrder();
+
       this.makeListofturnOrders();
     }
 
@@ -2218,7 +2372,7 @@ export class BattleScene extends Scene {
       return;
     }
 
-    // Apply statuses that activate exactly at the start of this unit's turn.
+    // Apply statuses that activate at eneymy turn start
     this.currentUnit = unit;
     this.applyStartOfTurnEffects(unit);
 
@@ -2243,7 +2397,6 @@ export class BattleScene extends Scene {
     this.slideToView("center", () => {
       this.highlightCurrentUnit(unit);
 
-      // Exhausted units lose their action and recover stamina instead.
       if (unit.exhausted) {
         unit.exhausted = false;
         unit.stamina = Math.min(unit.maxStamina, unit.stamina + 35);
@@ -2271,16 +2424,16 @@ export class BattleScene extends Scene {
     });
   }
 
-  // Gives all living units a small stamina recovery at the end of each round.
+  // recover stamina each round
   recoverAllUnitsAtRoundEnd() {
     this.allUnits.forEach((unit) => {
       if (unit.alive) {
-        unit.stamina = Math.min(unit.maxStamina, unit.stamina + 8);
+        unit.stamina = Math.min(unit.maxStamina, unit.stamina + 8); // dont go higher than max stamina
       }
     });
   }
 
-  // Clears previous highlights and tints the unit whose turn is active.
+  // clear highlights
   highlightCurrentUnit(unit) {
     this.allUnits.forEach((u) => {
       if (u.centerDisplay) {
@@ -2301,29 +2454,37 @@ export class BattleScene extends Scene {
     }
   }
 
-  // Shows the player's available actions for the active unit.
+  // show avialbale actions for next guy
   showPlayerTurn(unit) {
     this.showMessage("");
     this.drawBottomBarForUnit(unit);
   }
 
-  // Executes an enemy turn using its stored intent, with fallbacks for invalid/dead targets.
   runEnemyTurn(enemy) {
     if (!enemy.intent) {
-      const alivePlayers = this.getAlivePlayers();
+      const alivePlayers = this.whoAliveRightNow();
+
       const target = this.chooseEnemyIntentTarget(enemy, 0, alivePlayers);
+
+      let targetId = null;
+
+      if (target) {
+        targetId = target.id;
+      }
 
       enemy.intent = {
         skill: this.getEnemyChosenSkill(enemy),
-        targetId: target ? target.id : null,
+        targetId,
       };
     }
 
     const skill = enemy.intent.skill;
-    let target = this.getUnitById(enemy.intent.targetId);
 
+    let target = this.gettheIDofUnit(enemy.intent.targetId);
+
+    // targets the lowest hp fall back
     if (!target) {
-      target = this.getLowestHpAlivePlayer();
+      target = this.playerLowestHP();
     }
 
     if (!target) {
@@ -2332,7 +2493,7 @@ export class BattleScene extends Scene {
     }
 
     if (!target.alive) {
-      target = this.getLowestHpAlivePlayer();
+      target = this.playerLowestHP();
     }
 
     if (!target) {
@@ -2348,21 +2509,21 @@ export class BattleScene extends Scene {
 
     this.showCenterUnit(enemy, "enemy", true);
 
-    // If the enemy cannot afford its chosen skill, it spends the turn recovering instead.
+    // spend turn instead of using a skkill if no stamina
     if (enemy.stamina < skill.staminaCost) {
       enemy.stamina = Math.min(enemy.maxStamina, enemy.stamina + 30);
       this.showMessage(`${enemy.name} is too tired and recovers stamina.`);
       enemy.intent = null;
       this.updateAllUnitVisuals();
 
-      this.time.delayedCall(850, () => {
+      this.time.delayedCall(1550, () => {
         this.endTurn();
       });
 
       return;
     }
 
-    // Move the camera to whichever panel contains the chosen target before animating the skill.
+    // move cam to t he panel of the target
     const targetView = this.getAttackViewForTarget(target);
     this.showBattleActionMessage(`${enemy.name} used ${skill.name}.`);
 
@@ -2387,7 +2548,7 @@ export class BattleScene extends Scene {
     );
   }
 
-  // Slides the camera and bottom UI between center, ally-targeting, and enemy-targeting views.
+  // slide the caemra and bottom ui  between center to the 2 diff veiws
   slideToView(view, onComplete, duration = 300) {
     let targetScroll = scroll_cam.center;
 
@@ -2401,7 +2562,7 @@ export class BattleScene extends Scene {
 
     this.currentView = view;
 
-    // Side rosters are only shown in the main center view so target views stay uncluttered.
+    // side rosters are only shown in main center so target is not clutteedrd
     if (view === "center") {
       this.sideRoot.setVisible(true);
     } else {
@@ -2432,14 +2593,14 @@ export class BattleScene extends Scene {
     });
   }
 
-  // Creates the container that holds player action buttons and battle messages.
+  // holds player action btns and battle mgs
   makeBarOnBottom() {
     this.bottomRoot = this.add.container(worldthing.center, 0);
     this.bottomRoot.setDepth(500);
     this.bottomRoot.setVisible(false);
   }
 
-  // Hides and clears action UI plus any open popups/tooltips.
+  // hide and clear acito UI and any othe popups/tooltips that are open
   hideBottomBar() {
     this.bottomRoot.setVisible(false);
     this.bottomRoot.removeAll(true);
@@ -2448,7 +2609,7 @@ export class BattleScene extends Scene {
     this.clearTooltip();
   }
 
-  // Draws all available player actions for the current unit: skills, rest, weapons, and bag.
+  // all availbale plaeyr actions for current unit make them her
   drawBottomBarForUnit(unit) {
     this.bottomRoot.setVisible(true);
     this.bottomRoot.removeAll(true);
@@ -2477,16 +2638,20 @@ export class BattleScene extends Scene {
         align: "left",
       },
     );
+
     turnText.setOrigin(0, 0.5);
+
     this.bottomRoot.add(turnText);
 
     const buttonY = ui.bar_y_bottom + 115;
+
     const buttonH = 70;
+
     const buttonGap = 24;
 
     let nextLeft = 58;
 
-    // Character skills are shown as large action buttons.
+    // char skills large action butns
     unit.characterSkills.forEach((skill) => {
       const buttonW = 250;
       const centerX = nextLeft + buttonW / 2;
@@ -2518,8 +2683,9 @@ export class BattleScene extends Scene {
       nextLeft += buttonW + buttonGap;
     });
 
-    // Rest is represented as a normal self-targeting skill object so it can reuse skill flow.
+    // rest is self target skill obj
     const restW = 170;
+
     const restX = nextLeft + restW / 2;
 
     const restButton = this.makeBottomButton(
@@ -2540,10 +2706,10 @@ export class BattleScene extends Scene {
         damage: 0,
         staminaDamage: 0,
         heal: 0,
-        staminaRecover: 35,
+        stamRec: 35,
       };
 
-      this.beginSkillTarget(unit, restSkill);
+      this.beginSkillTarget(unit, restSkill); // on itself
     });
 
     restButton.hit.on("pointerover", () => {
@@ -2560,12 +2726,13 @@ export class BattleScene extends Scene {
 
     nextLeft += restW + buttonGap;
 
-    // Equipped weapons open a popup of weapon-specific skills.
+    // equppepd weapon popup for wpn skills
     unit.weaponIds.forEach((weaponId) => {
       const weapon = battleWeapons[weaponId];
 
       if (weapon) {
         const buttonSize = 70;
+
         const centerX = nextLeft + buttonSize / 2;
 
         const button = this.makeWeaponButton(
@@ -2596,7 +2763,7 @@ export class BattleScene extends Scene {
     this.drawTurnOrderPanel();
   }
 
-  // Returns living units sorted by speed; useful for predicting future order.
+  // returns living units sorted by speed for prediting future orderr
   getSortedAliveTurnOrder() {
     const order = [];
 
@@ -2621,10 +2788,11 @@ export class BattleScene extends Scene {
     return order;
   }
 
-  // Gets the next few living units after the current turn, wrapping into a simulated next round if needed.
+  // get next living units after curr turn
   getUpcomingTurnUnits(count) {
     const upcoming = [];
 
+    // starts at the current turn + 1
     for (let i = this.turnIndex + 1; i < this.turnOrder.length; i += 1) {
       const unit = this.turnOrder[i];
 
@@ -2634,18 +2802,24 @@ export class BattleScene extends Scene {
         }
       }
 
+      // return now if we have enough units fonud
       if (upcoming.length >= count) {
         return upcoming;
       }
     }
 
-    // Temporarily recalculate next round order, then restore the real current order afterward.
+    // the current round did not have enough so we are here
+
+    // save the current turn because we have to calculate the NEXT round
     const savedTurnOrder = this.turnOrder;
     const savedTurnIndex = this.turnIndex;
 
+    //calcualte turn order as new round starting
     this.whichTurnNow();
 
+    // add the units from the next round into the new upcoming if we dont have enough count
     this.turnOrder.forEach((unit) => {
+      // at enough count, stop because we have enough now
       if (upcoming.length < count) {
         if (unit.alive) {
           upcoming.push(unit);
@@ -2653,15 +2827,16 @@ export class BattleScene extends Scene {
       }
     });
 
+    // restore actual current turn //!! withotu this, the ui would actuall change the real battle turnn
     this.turnOrder = savedTurnOrder;
     this.turnIndex = savedTurnIndex;
 
     return upcoming;
   }
 
-  // Draws the small bottom-right panel that previews upcoming turns.
   drawTurnOrderPanel() {
     const panelX = main_width - 280;
+
     const panelY = ui.bar_y_bottom + 30;
 
     const title = this.add.text(panelX, panelY, "TURN ORDER", {
@@ -2671,7 +2846,9 @@ export class BattleScene extends Scene {
       stroke: "#000000",
       strokeThickness: 4,
     });
+
     title.setAlpha(0.8);
+
     this.bottomRoot.add(title);
 
     const helpBox = this.add.rectangle(
@@ -2682,7 +2859,9 @@ export class BattleScene extends Scene {
       0x111111,
       1,
     );
+
     helpBox.setOrigin(0.5);
+
     helpBox.setStrokeStyle(2, 0xffffff, 0.85);
 
     const helpText = this.add.text(panelX + 170, panelY + 9, "?", {
@@ -2696,12 +2875,13 @@ export class BattleScene extends Scene {
 
     const helpHit = this.add.zone(panelX + 170, panelY + 9, 32, 32);
     helpHit.setOrigin(0.5);
+
     helpHit.setInteractive({ useHandCursor: false });
 
     helpHit.on("pointerover", () => {
       this.input.setDefaultCursor("pointer");
       this.showTooltip(
-        "Turn order decides who goes next. It is affected by speed.",
+        "Turn order decides who goes next. It is affected by speed of survivor/zombie.",
         main_width - 260,
         ui.bar_y_bottom - 110,
       );
@@ -2731,16 +2911,18 @@ export class BattleScene extends Scene {
       );
 
       line.setAlpha(0.8);
+
       this.bottomRoot.add(line);
     });
   }
 
-  // Replaces the bottom action UI with a single battle narration message.
+  // replca bototm action UI with action msg
   showBattleActionMessage(message) {
     this.bottomRoot.setVisible(true);
+
     this.bottomRoot.removeAll(true);
 
-    // Keeps the bottom message locked to the current camera view.
+    // keeps bottom msg locked in current cam view
     this.bottomRoot.x = this.cameras.main.scrollX;
 
     if (this.messageText) {
@@ -2755,6 +2937,7 @@ export class BattleScene extends Scene {
       0x000000,
       0.92,
     );
+
     bg.setOrigin(0, 0);
 
     const text = this.add.text(60, ui.bar_y_bottom + 82, message, {
@@ -2765,14 +2948,16 @@ export class BattleScene extends Scene {
       strokeThickness: 5,
       align: "left",
     });
+
     text.setOrigin(0, 0.5);
 
     this.bottomRoot.add([bg, text]);
   }
 
-  // Replaces the bottom action UI with instructions for choosing a target.
+  //replace bototm action UI iwth instruction for choosing target
   showTargetPrompt(message) {
     this.bottomRoot.setVisible(true);
+
     this.bottomRoot.removeAll(true);
 
     const bg = this.add.rectangle(
@@ -2798,7 +2983,7 @@ export class BattleScene extends Scene {
     this.bottomRoot.add([bg, text]);
   }
 
-  // Creates the bag button, using an icon when available and text fallback otherwise.
+  // create bag btn
   makeInventoryButton(x, y, w, h) {
     const root = this.add.container(x, y);
 
@@ -2808,25 +2993,16 @@ export class BattleScene extends Scene {
 
     const objects = [bg];
 
-    if (this.textures.exists("classroom-bag")) {
-      const icon = this.add.image(0, 0, "classroom-bag");
-      icon.setOrigin(0.5);
-      icon.setScale(46 / icon.height);
-      objects.push(icon);
-    } else {
-      const text = this.add.text(0, 0, "BAG", {
-        fontFamily: "DogicaBold",
-        fontSize: "12px",
-        color: "#ffffff",
-        stroke: "#000000",
-        strokeThickness: 4,
-      });
-      text.setOrigin(0.5);
-      objects.push(text);
-    }
+    const icon = this.add.image(0, 0, "classroom-bag");
+    icon.setOrigin(0.5);
+
+    icon.setScale(46 / icon.height);
+    objects.push(icon);
 
     const hit = this.add.zone(0, 0, w, h);
+
     hit.setOrigin(0.5);
+
     hit.setInteractive({ useHandCursor: false });
 
     hit.on("pointerover", () => {
@@ -2850,12 +3026,13 @@ export class BattleScene extends Scene {
     };
   }
 
-  // Creates a reusable rectangular bottom-bar button with hover styling.
+  // bottom bar w/ hover styling (resuable omg)
   makeBottomButton(x, y, w, h, label) {
     const root = this.add.container(x, y);
 
     const bg = this.add.rectangle(0, 0, w, h, 0x111111, 1);
     bg.setOrigin(0.5);
+
     bg.setStrokeStyle(3, 0xb5b5b5, 1);
 
     const text = this.add.text(0, 0, label, {
@@ -2867,10 +3044,12 @@ export class BattleScene extends Scene {
       align: "center",
     });
 
+    const hit = this.add.zone(0, 0, w, h);
+
     text.setOrigin(0.5);
 
-    const hit = this.add.zone(0, 0, w, h);
     hit.setOrigin(0.5);
+
     hit.setInteractive({ useHandCursor: false });
 
     hit.on("pointerover", () => {
@@ -2894,37 +3073,28 @@ export class BattleScene extends Scene {
     };
   }
 
-  // Creates a weapon icon button that opens that weapon's skill list.
+  // wpn icon tha topens that wpns skill lsit
   makeWeaponButton(x, y, w, h, weapon) {
     const root = this.add.container(x, y);
 
     const bg = this.add.rectangle(0, 0, w, h, 0x111111, 1);
     bg.setOrigin(0.5);
+
     bg.setStrokeStyle(3, 0xb5b5b5, 1);
 
     const objects = [bg];
 
     if (weapon.icon) {
-      if (this.textures.exists(weapon.icon)) {
-        const icon = this.add.image(0, 0, weapon.icon);
-        icon.setOrigin(0.5);
-        icon.setScale(48 / icon.height);
-        objects.push(icon);
-      } else {
-        const missing = this.add.text(0, 0, "?", {
-          fontFamily: "DogicaBold",
-          fontSize: "20px",
-          color: "#ffffff",
-          stroke: "#000000",
-          strokeThickness: 4,
-        });
-        missing.setOrigin(0.5);
-        objects.push(missing);
-      }
+      const icon = this.add.image(0, 0, weapon.icon);
+      icon.setOrigin(0.5);
+
+      icon.setScale(48 / icon.height);
+      objects.push(icon);
     }
 
     const hit = this.add.zone(0, 0, w, h);
     hit.setOrigin(0.5);
+
     hit.setInteractive({ useHandCursor: false });
 
     hit.on("pointerover", () => {
@@ -2948,7 +3118,7 @@ export class BattleScene extends Scene {
     };
   }
 
-  // Creates an invisible full-screen click zone behind popups so outside clicks close them.
+  // invisible screen click zone behid popups so outside clisk close popopsup
   createPopupCloseZone() {
     this.clearPopupCloseZone();
 
@@ -2964,12 +3134,13 @@ export class BattleScene extends Scene {
 
     this.popupCloseZone.on("pointerdown", () => {
       this.clearSkillPopup();
+
       this.clearConsumablePopup();
       this.clearTooltip();
     });
   }
 
-  // Destroys the outside-click popup closer if it exists.
+  // destroy outside click thing if popup closed
   clearPopupCloseZone() {
     if (this.popupCloseZone) {
       this.popupCloseZone.destroy();
@@ -2977,11 +3148,13 @@ export class BattleScene extends Scene {
     }
   }
 
-  // Opens a popup listing the selected weapon's skills.
+  // opens popup listing the selcted wepaons ksill
   showWeaponSkillPopup(unit, weapon, x) {
     this.clearSkillPopup();
+
     this.clearConsumablePopup();
     this.clearTooltip();
+
     this.createPopupCloseZone();
 
     const skills = weapon.skills || [];
@@ -3014,6 +3187,7 @@ export class BattleScene extends Scene {
 
     this.skillPopup.add(bg);
 
+    // make the skills optoins
     skills.forEach((skill, index) => {
       const itemY = 34 + index * 58;
 
@@ -3033,6 +3207,7 @@ export class BattleScene extends Scene {
 
       const hit = this.add.zone(0, itemY, 225, 44);
       hit.setOrigin(0.5);
+
       hit.setInteractive({ useHandCursor: false });
 
       hit.on("pointerover", () => {
@@ -3055,11 +3230,11 @@ export class BattleScene extends Scene {
         this.beginSkillTarget(unit, skill);
       });
 
+      // ptu in popup menu
       this.skillPopup.add([btn, label, hit]);
     });
   }
 
-  // Creates one consumable inventory slot with icon, quantity label, and input zone.
   makeConsumableSlot(x, y, size, item, qty) {
     const root = this.add.container(x, y);
 
@@ -3121,7 +3296,7 @@ export class BattleScene extends Scene {
     };
   }
 
-  // Opens a grid popup of usable consumables from the battle inventory snapshot.
+  // open grid popup of usable consumbales from invntory
   showConsumablePopup(unit, x) {
     this.clearSkillPopup();
     this.clearConsumablePopup();
@@ -3133,7 +3308,6 @@ export class BattleScene extends Scene {
     const slotSize = 70;
     const gap = 12;
 
-    // Grid size adapts to the number of items but caps at five columns.
     let cols = items.length;
 
     if (cols < 1) {
@@ -3151,15 +3325,18 @@ export class BattleScene extends Scene {
     }
 
     const popupW = cols * slotSize + (cols - 1) * gap + 34;
+
     const popupH = rows * slotSize + (rows - 1) * gap + 34;
 
     const popupTopY = ui.bar_y_bottom - popupH - 18;
+
     const popupX = this.clampPopupX(x, popupW);
 
     this.consumablePopup = this.add.container(
       worldthing.center + popupX,
       popupTopY,
     );
+
     this.consumablePopup.setDepth(600);
 
     const bg = this.add.rectangle(
@@ -3170,8 +3347,11 @@ export class BattleScene extends Scene {
       0x000000,
       0.96,
     );
+
     bg.setOrigin(0.5);
+
     bg.setStrokeStyle(3, 0xb5b5b5, 1);
+
     bg.setInteractive({ useHandCursor: false });
 
     bg.on("pointerdown", (pointer, localX, localY, event) => {
@@ -3192,11 +3372,34 @@ export class BattleScene extends Scene {
       });
 
       emptyText.setOrigin(0.5);
+
       this.consumablePopup.add(emptyText);
       return;
     }
 
     items.forEach((entry, index) => {
+      // example
+      // items = [
+      //   thing1, index 0
+      //   thing 2, index 1
+      //   thing 3, index 2
+      //   thing 4, index 3
+      // ]
+      // grid goes like
+      // index 0 index 1 index 2
+      // index 3 etc
+
+      // if cols = 3 then
+
+      // indedx 0 is col 0 row 0
+      // index 1 is col 1 row 0
+      // inex 2 is col 2 row 0
+      // index 3 is col 0 row 1
+      // index 4 is col 0 row 2
+
+      // % cols wraps back to 0 after 3
+      // mah..floor gives row
+
       const item = battleConsumables[entry.id];
 
       if (!item) {
@@ -3241,7 +3444,7 @@ export class BattleScene extends Scene {
     });
   }
 
-  // Keeps popups horizontally inside the visible viewport.
+  // keeps popups horoitnaoly inside the visible viewport
   clampPopupX(x, popupW) {
     let popupX = x;
 
@@ -3259,7 +3462,6 @@ export class BattleScene extends Scene {
     return popupX;
   }
 
-  // Normalizes saved consumables into consistent { id, qty } entries.
   getConsumableEntries() {
     const entries = [];
 
@@ -3284,13 +3486,12 @@ export class BattleScene extends Scene {
     return entries;
   }
 
-  // Starts skill targeting, auto-selecting the target when there is only one valid option.
   beginSkillTarget(user, skill) {
     this.clearSkillPopup();
     this.clearConsumablePopup();
     this.clearTooltip();
 
-    // Prevent the action before entering target mode if the user cannot pay the stamina cost.
+    // no action befire entering target moded if u dont have enguohs stamina
     if (user.stamina < skill.staminaCost) {
       this.showMessage(`${user.name} does not have enough stamina.`);
       return;
@@ -3305,7 +3506,7 @@ export class BattleScene extends Scene {
     }
 
     if (skill.target === "enemy") {
-      const aliveEnemies = this.getAliveEnemies();
+      const aliveEnemies = this.zombieAliveGuys();
 
       if (aliveEnemies.length === 1) {
         this.tryUseSelectedSkillOn(aliveEnemies[0]);
@@ -3319,7 +3520,7 @@ export class BattleScene extends Scene {
     }
 
     if (skill.target === "ally") {
-      const alivePlayers = this.getAlivePlayers();
+      const alivePlayers = this.whoAliveRightNow();
 
       if (alivePlayers.length === 1) {
         this.tryUseSelectedSkillOn(alivePlayers[0]);
@@ -3333,7 +3534,6 @@ export class BattleScene extends Scene {
     }
   }
 
-  // Converts a consumable item into a temporary skill-like object and starts ally targeting.
   beginConsumableTarget(user, item) {
     this.clearSkillPopup();
     this.clearConsumablePopup();
@@ -3349,16 +3549,16 @@ export class BattleScene extends Scene {
       damage: 0,
       staminaDamage: 0,
       heal: item.heal || 0,
-      staminaRecover: item.staminaRecover || 0,
+      stamRec: item.stamRec || 0,
       effectId: item.effectId || null,
-      staminaRecoverPercent: item.staminaRecoverPercent || 0,
+      recovStamP: item.recovStamP || 0,
       extraTurnNextRound: item.extraTurnNextRound || false,
       overexertNextTurn: item.overexertNextTurn || false,
       baitNextRound: item.baitNextRound || false,
       consumableId: item.id,
     };
 
-    const alivePlayers = this.getAlivePlayers();
+    const alivePlayers = this.whoAliveRightNow();
 
     if (alivePlayers.length === 1) {
       this.tryUseSelectedSkillOn(alivePlayers[0]);
@@ -3366,11 +3566,12 @@ export class BattleScene extends Scene {
     }
 
     this.showMessage("");
+
     this.showTargetPrompt(`Choose a survivor to use ${item.name} on.`);
     this.slideToView("left");
   }
 
-  // Validates the clicked target, runs the selected skill, and ends the active unit's turn.
+  // validate clicked target, runs skill, and ends unit's turn
   tryUseSelectedSkillOn(target) {
     if (!this.selectedSkill) {
       return;
@@ -3399,12 +3600,14 @@ export class BattleScene extends Scene {
     }
 
     const user = this.selectedUser;
+
     const skill = this.selectedSkill;
+
     const targetView = this.getAttackViewForTarget(target);
 
     this.showBattleActionMessage(`${user.name} used ${skill.name}.`);
 
-    // Run the actual skill after the camera is showing the correct target panel.
+    // run actual sill before the cam is showing target panel (the 3 views ting)
     const doAction = () => {
       this.performSkillWithAnimation(user, skill, target, false, () => {
         this.clearSelectedSkill();
@@ -3428,7 +3631,7 @@ export class BattleScene extends Scene {
     }
   }
 
-  // Decides which camera view contains the target being acted on.
+  // whicih cam view has the target being acted on
   getAttackViewForTarget(target) {
     if (target.team === "player") {
       if (target === this.activePlayerUnit) {
@@ -3449,7 +3652,7 @@ export class BattleScene extends Scene {
     return "center";
   }
 
-  // Returns the display currently visible for a unit based on active center slots and side views.
+  // retunr the display currently visible fofr unit based on active center slots and side viewx
   getVisibleDisplayForUnit(unit) {
     if (unit.team === "player") {
       if (unit === this.activePlayerUnit) {
@@ -3474,10 +3677,11 @@ export class BattleScene extends Scene {
     return unit.centerDisplay;
   }
 
-  // Chooses whether a skill should use melee movement animation or resolve in place.
+  // shuld skill use mlee movement animatoin
+  // or reolve in place
   performSkillWithAnimation(user, skill, target, enemyUsed, onComplete) {
-    // Only damaging, non-ranged skills move the attacker across the screen.
-    const hasDamage =
+    //only range, non range skills move the  attcker/
+    const has_dmg =
       Number(skill.damage || 0) > 0 || Number(skill.staminaDamage || 0) > 0;
 
     let ranged = false;
@@ -3494,16 +3698,53 @@ export class BattleScene extends Scene {
       ranged = true;
     }
 
-    const shouldMove = hasDamage && !ranged;
+    const shouldMove = has_dmg && !ranged;
 
     const userDisplay = this.getVisibleDisplayForUnit(user);
+
     const targetDisplay = this.getVisibleDisplayForUnit(target);
 
     if (!shouldMove) {
+      if (skill.effectId === "dombis-spit") {
+        this.playSkillVisualEffect(
+          skill,
+          targetDisplay,
+          null,
+          userDisplay,
+          () => {
+            const outcome = this.useSkill(user, skill, target, enemyUsed);
+            this.playHitEffect(target, outcome, targetDisplay);
+
+            if (onComplete) {
+              this.time.delayedCall(550, onComplete);
+            }
+          },
+        );
+
+        return;
+      }
+      if (skill.effectId === "alpha-long-slap") {
+        this.playSkillVisualEffect(
+          skill,
+          targetDisplay,
+          null,
+          userDisplay,
+          () => {
+            const outcome = this.useSkill(user, skill, target, enemyUsed);
+            this.playHitEffect(target, outcome, targetDisplay);
+
+            if (onComplete) {
+              this.time.delayedCall(650, onComplete);
+            }
+          },
+        );
+
+        return;
+      }
       const outcome = this.useSkill(user, skill, target, enemyUsed);
 
       if (outcome) {
-        this.playSkillVisualEffect(skill, targetDisplay, outcome);
+        this.playSkillVisualEffect(skill, targetDisplay, outcome, userDisplay);
       }
 
       this.playHitEffect(target, outcome, targetDisplay);
@@ -3514,7 +3755,6 @@ export class BattleScene extends Scene {
 
       return;
     }
-
     if (!userDisplay || !targetDisplay) {
       const outcome = this.useSkill(user, skill, target, enemyUsed);
       this.playHitEffect(target, outcome, targetDisplay);
@@ -3537,7 +3777,7 @@ export class BattleScene extends Scene {
     );
   }
 
-  // Moves the attacker toward the target, resolves the skill at impact time, then returns them.
+  // move attacker to targt
   playMeleeAttackAnimation(
     user,
     skill,
@@ -3550,6 +3790,7 @@ export class BattleScene extends Scene {
     const attackerRoot = userDisplay.root;
 
     const startX = attackerRoot.x;
+
     const startY = attackerRoot.y;
 
     let attackX = targetDisplay.root.x;
@@ -3576,7 +3817,12 @@ export class BattleScene extends Scene {
           const outcome = this.useSkill(user, skill, target, enemyUsed);
 
           if (outcome) {
-            this.playSkillVisualEffect(skill, targetDisplay);
+            this.playSkillVisualEffect(
+              skill,
+              targetDisplay,
+              outcome,
+              userDisplay,
+            );
           }
           this.playHitEffect(target, outcome, targetDisplay);
 
@@ -3599,7 +3845,7 @@ export class BattleScene extends Scene {
     });
   }
 
-  // Shows a temporary falling damage number near the target display.
+  // shwo temp faling damge numb near target display
   spawnDamageIndicator(display, damageAmount) {
     const randomX = Phaser.Math.Between(-70, 70);
     const randomY = Phaser.Math.Between(-255, -170);
@@ -3619,6 +3865,7 @@ export class BattleScene extends Scene {
     );
 
     text.setOrigin(0.5);
+
     text.setDepth(260);
 
     this.tweens.add({
@@ -3633,7 +3880,6 @@ export class BattleScene extends Scene {
     });
   }
 
-  // Plays damage feedback: floating damage text, white flash, knockback, and tilt.
   playHitEffect(target, outcome, forcedDisplay) {
     if (!outcome) {
       return;
@@ -3711,11 +3957,11 @@ export class BattleScene extends Scene {
     });
   }
 
-  // Applies the actual gameplay effects of a skill: cost, damage, healing, shields, items, and status flags.
+  // applies the actual gampleya effect of skiill
   useSkill(user, skill, target, enemyUsed) {
     const staminaCost = Number(skill.staminaCost || 0);
 
-    // Some consumables mark the target to pay future stamina costs with HP next turn.
+    // some consumlbels amrk the target to pay future staina costs with hp next turn (adrenaline)
     if (skill.overexertNextTurn) {
       target.overexertNextTurn = true;
 
@@ -3729,12 +3975,11 @@ export class BattleScene extends Scene {
         damage: 0,
         staminaDamage: 0,
         heal: 0,
-        staminaRecover: 0,
+        stamRec: 0,
         overexert: true,
       };
     }
 
-    // Overexertion converts this skill's stamina cost into HP cost, but never kills the user directly.
     if (user.overexertActive) {
       const hpCost = Math.ceil(staminaCost / 2);
 
@@ -3751,7 +3996,6 @@ export class BattleScene extends Scene {
       }
     }
 
-    // Shield effects store reduction and hit count on the target, then finish without damage.
     if (skill.shield) {
       target.shieldReduction = skill.shield.damageReduction;
       target.shieldHits = skill.shield.hits;
@@ -3766,12 +4010,11 @@ export class BattleScene extends Scene {
         damage: 0,
         staminaDamage: 0,
         heal: 0,
-        staminaRecover: 0,
+        stamRec: 0,
         shield: true,
       };
     }
 
-    // Damage is based on skill damage, user damage, target defense, reductions, and shields.
     let damage = Number(skill.damage || 0);
 
     if (damage > 0) {
@@ -3803,7 +4046,7 @@ export class BattleScene extends Scene {
       target.hp -= damage;
     }
 
-    // Stamina damage can exhaust a target, causing it to lose its next action.
+    // exhcaustion
     const staminaDamage = Number(skill.staminaDamage || 0);
 
     if (staminaDamage > 0) {
@@ -3815,8 +4058,9 @@ export class BattleScene extends Scene {
       }
     }
 
-    // Track actual restored values after caps so visual effects can show accurate results.
+    // actual restored vals after caps so visual efects can show accurate results
     let actualHeal = 0;
+
     let actualStaminaRecover = 0;
 
     const heal = Number(skill.heal || 0);
@@ -3833,12 +4077,12 @@ export class BattleScene extends Scene {
       actualHeal = target.hp - beforeHp;
     }
 
-    const staminaRecover = Number(skill.staminaRecover || 0);
+    const stamRec = Number(skill.stamRec || 0);
 
-    if (staminaRecover > 0) {
+    if (stamRec > 0) {
       const beforeStamina = target.stamina;
 
-      target.stamina += staminaRecover;
+      target.stamina += stamRec;
 
       if (target.stamina > target.maxStamina) {
         target.stamina = target.maxStamina;
@@ -3847,11 +4091,11 @@ export class BattleScene extends Scene {
       actualStaminaRecover = target.stamina - beforeStamina;
     }
 
-    const staminaRecoverPercent = Number(skill.staminaRecoverPercent || 0);
+    const recovStamP = Number(skill.recovStamP || 0);
 
-    if (staminaRecoverPercent > 0) {
+    if (recovStamP > 0) {
       const beforeStamina = target.stamina;
-      const amount = Math.ceil(target.maxStamina * staminaRecoverPercent);
+      const amount = Math.ceil(target.maxStamina * recovStamP);
 
       target.stamina += amount;
 
@@ -3866,7 +4110,7 @@ export class BattleScene extends Scene {
       target.extraTurnNextRound = true;
     }
 
-    // Bait forces enemies to target this unit for the next round.
+    // baits
     if (skill.baitNextRound) {
       target.baitTurns = 1;
       this.forceEnemyIntentsToTarget(target);
@@ -3888,10 +4132,11 @@ export class BattleScene extends Scene {
       damage,
       staminaDamage,
       heal: actualHeal,
-      staminaRecover: actualStaminaRecover,
+      stamRec: actualStaminaRecover,
     };
   }
-  // Rewrites all living enemy intents so they attack the provided bait target.
+
+  // rewrite all intents curently so they attack the bait target
   forceEnemyIntentsToTarget(target) {
     if (!target) {
       return;
@@ -3915,7 +4160,8 @@ export class BattleScene extends Scene {
 
     this.updateAllUnitVisuals();
   }
-  // Activates delayed status flags at the beginning of a unit's turn.
+
+  // delaye status flags at beginning of units turn
   applyStartOfTurnEffects(unit) {
     if (!unit) {
       return;
@@ -3926,7 +4172,8 @@ export class BattleScene extends Scene {
       unit.overexertActive = true;
     }
   }
-  // Removes one consumable use from the temporary battle inventory.
+
+  // removes on cosnumle from temp inventory
   removeConsumable(id) {
     for (let i = 0; i < this.consumableInventory.length; i += 1) {
       const entry = this.consumableInventory[i];
@@ -3953,7 +4200,6 @@ export class BattleScene extends Scene {
     }
   }
 
-  // Saves updated consumable quantities back to persistent game data after victory.
   commitBattleConsumablesToDb() {
     if (!this.gameData) {
       return Promise.resolve();
@@ -3968,17 +4214,17 @@ export class BattleScene extends Scene {
     );
 
     return saveGameData(this.gameData).catch((error) => {
-      console.warn("Could not commit battle consumables.", error);
+      console.log(error);
     });
   }
 
-  // Clears the active skill/user selection after the action completes or is cancelled.
+  // celars activeksill/user selection after action comepltesl / cancel
   clearSelectedSkill() {
     this.selectedSkill = null;
     this.selectedUser = null;
   }
 
-  // Closes the weapon skill popup and its outside-click close zone.
+  // closes wepaon skill popup
   clearSkillPopup() {
     if (this.skillPopup) {
       this.skillPopup.destroy(true);
@@ -3988,7 +4234,7 @@ export class BattleScene extends Scene {
     this.clearPopupCloseZone();
   }
 
-  // Closes the consumable popup and its outside-click close zone.
+  // closes consumbel popup and outsclick click zone
   clearConsumablePopup() {
     if (this.consumablePopup) {
       this.consumablePopup.destroy(true);
@@ -3998,7 +4244,6 @@ export class BattleScene extends Scene {
     this.clearPopupCloseZone();
   }
 
-  // Shows a fixed-screen tooltip, clamped upward so it does not collide with the bottom bar.
   showTooltip(text, x, y) {
     this.clearTooltip();
 
@@ -4009,11 +4254,13 @@ export class BattleScene extends Scene {
     }
 
     this.tooltip = this.add.container(x, safeY);
+
     this.tooltip.setDepth(650);
     this.tooltip.setScrollFactor(0);
 
     const bg = this.add.rectangle(0, 0, 410, 105, 0x000000, 0.98);
     bg.setOrigin(0.5);
+
     bg.setStrokeStyle(2, 0xffffff, 0.9);
 
     const label = this.add.text(-190, -40, text, {
@@ -4032,7 +4279,6 @@ export class BattleScene extends Scene {
     this.tooltip.add([bg, label]);
   }
 
-  // Destroys the current tooltip if one is open.
   clearTooltip() {
     if (this.tooltip) {
       this.tooltip.destroy(true);
@@ -4040,7 +4286,6 @@ export class BattleScene extends Scene {
     }
   }
 
-  // Creates the small top-center message area used for warnings and short combat messages.
   msgTextMake() {
     this.messageBg = this.add.rectangle(
       main_width / 2,
@@ -4052,6 +4297,7 @@ export class BattleScene extends Scene {
     );
     this.messageBg.setOrigin(0.5);
     this.messageBg.setDepth(175);
+
     this.messageBg.setScrollFactor(0);
     this.messageBg.setVisible(false);
 
@@ -4065,13 +4311,16 @@ export class BattleScene extends Scene {
     });
 
     this.messageText.setOrigin(0.5, 0);
+
     this.messageText.setDepth(180);
     this.messageText.setScrollFactor(0);
   }
 
-  // Updates the top-center message and hides its background when the message is empty.
+  // top center mssage
   showMessage(message) {
+    // console.log(message)
     if (this.messageText) {
+      // console.log("hit")
       this.messageText.setText(message);
     }
 
@@ -4084,8 +4333,7 @@ export class BattleScene extends Scene {
     }
   }
 
-  // Returns living player units.
-  getAlivePlayers() {
+  whoAliveRightNow() {
     const alive = [];
 
     this.playerUnits.forEach((unit) => {
@@ -4097,8 +4345,7 @@ export class BattleScene extends Scene {
     return alive;
   }
 
-  // Returns living enemy units.
-  getAliveEnemies() {
+  zombieAliveGuys() {
     const alive = [];
 
     this.enemyUnits.forEach((unit) => {
@@ -4110,8 +4357,7 @@ export class BattleScene extends Scene {
     return alive;
   }
 
-  // Finds the living player with the lowest HP for enemy fallback targeting.
-  getLowestHpAlivePlayer() {
+  playerLowestHP() {
     let chosen = null;
 
     this.playerUnits.forEach((unit) => {
@@ -4129,7 +4375,6 @@ export class BattleScene extends Scene {
     return chosen;
   }
 
-  // Finds the first living player in team order.
   getFirstAlivePlayer() {
     let chosen = null;
 
@@ -4144,7 +4389,6 @@ export class BattleScene extends Scene {
     return chosen;
   }
 
-  // Finds the first living enemy in team order.
   getFirstAliveEnemy() {
     let chosen = null;
 
@@ -4159,33 +4403,31 @@ export class BattleScene extends Scene {
     return chosen;
   }
 
-  // Resolves an enemy intent's stored target id back into the live unit object.
-  getEnemyIntentTarget(enemy) {
-    if (!enemy) {
-      return null;
-    }
+  // getEnemyIntentTarget(enemy) {
+  //   if (!enemy) {
+  //     return null;
+  //   }
 
-    if (!enemy.intent) {
-      return null;
-    }
+  //   if (!enemy.intent) {
+  //     return null;
+  //   }
 
-    return this.getUnitById(enemy.intent.targetId);
-  }
+  //   return this.gettheIDofUnit(enemy.intent.targetId);
+  // }
 
-  // Finds any battle unit by its unique battle id.
-  getUnitById(id) {
-    let found = null;
+  gettheIDofUnit(id) {
+    let f = null;
 
-    this.allUnits.forEach((unit) => {
-      if (unit.id === id) {
-        found = unit;
+    this.allUnits.forEach((a) => {
+      if (a.id === id) {
+        f = a;
       }
     });
 
-    return found;
+    return f;
   }
 
-  // Ends the current unit's turn, clears UI state, checks for battle end, and schedules the next turn.
+  // end current unit turn and clear ui state
   endTurn() {
     if (this.battleEnded) {
       return;
@@ -4206,12 +4448,13 @@ export class BattleScene extends Scene {
 
     this.turnIndex += 1;
 
+    // next turn
+
     this.time.delayedCall(250, () => {
       this.startNextTurn();
     });
   }
 
-  // Checks whether either team has been wiped out and triggers the correct end sequence.
   checkBattleEnd() {
     let playerAlive = false;
     let enemyAlive = false;
@@ -4229,7 +4472,7 @@ export class BattleScene extends Scene {
     });
 
     if (!playerAlive) {
-      this.playerDIES();
+      this.endBattle(false);
       return true;
     }
 
@@ -4241,7 +4484,6 @@ export class BattleScene extends Scene {
     return false;
   }
 
-  // Displays the battle result overlay and persists consumable usage if the player won.
   async endBattle(playerWon) {
     this.battleEnded = true;
     this.hideBottomBar();
@@ -4261,6 +4503,7 @@ export class BattleScene extends Scene {
       0x000000,
       0.72,
     );
+
     overlay.setOrigin(0, 0);
     overlay.setDepth(800);
     overlay.setScrollFactor(0);
@@ -4278,9 +4521,106 @@ export class BattleScene extends Scene {
     result.setScrollFactor(0);
 
     this.showMessage("");
+
+    this.time.delayedCall(1200, async () => {
+      if (playerWon) {
+        // new/FLOOR 2 battsles uese thi
+        if (this.battleReturnScene) {
+          this.scene.start(this.battleReturnScene, this.battleReturnData || {});
+          return;
+        }
+
+        // OLD FIRST STORY BATTLE uses this.
+        if (this.thisFirstTime()) {
+          await recordFirstBattleWin();
+
+          this.scene.start("PostFirstBattle");
+
+          this.scene.bringToTop("KnowledgeLogOverlay");
+          this.scene.bringToTop("PauseMenuOverlay");
+          this.scene.bringToTop("SettingsOverlay");
+
+          this.scene.bringToTop("InventoryIconOverlay");
+          this.scene.bringToTop("InventoryOverlay");
+
+          return;
+        }
+      }
+
+      if (!playerWon) {
+        // NEW/FLOOR 2 losses use this.
+        if (this.battleLoseScene) {
+          this.scene.start(this.battleLoseScene, this.battleLoseData || {});
+          return;
+        }
+
+        if (this.thisFirstTime()) {
+          await resetForFirstBattleDefeat();
+
+          this.scene.start("IdCard");
+
+          this.scene.bringToTop("KnowledgeLogOverlay");
+          this.scene.bringToTop("PauseMenuOverlay");
+          this.scene.bringToTop("SettingsOverlay");
+          this.scene.bringToTop("InventoryIconOverlay");
+          this.scene.bringToTop("InventoryOverlay");
+
+          return;
+        }
+      }
+    });
   }
 
-  // Plays a short black-screen wipe reveal at battle start.
+  playBattleResultFade(text) {
+    return new Promise((resolve) => {
+      const blackScreen = this.add.rectangle(
+        0,
+        0,
+        main_width,
+        main_height,
+        0x000000,
+        1,
+      );
+
+      blackScreen.setOrigin(0, 0);
+      blackScreen.setDepth(999999);
+      blackScreen.setScrollFactor(0);
+      blackScreen.setAlpha(0);
+
+      const resultText = this.add.text(main_width / 2, main_height / 2, text, {
+        fontFamily: "DogicaBold",
+        fontSize: "42px",
+        color: "#ffffff",
+        stroke: "#000000",
+        strokeThickness: 7,
+        align: "center",
+      });
+
+      resultText.setOrigin(0.5);
+      resultText.setDepth(1000000);
+      resultText.setScrollFactor(0);
+      resultText.setAlpha(0);
+
+      this.tweens.add({
+        targets: blackScreen,
+        alpha: 1,
+        duration: 650,
+        ease: "Cubic.In",
+        onComplete: () => {
+          this.tweens.add({
+            targets: resultText,
+            alpha: 1,
+            duration: 260,
+            ease: "Cubic.Out",
+            onComplete: () => {
+              this.time.delayedCall(1700, resolve);
+            },
+          });
+        },
+      });
+    });
+  }
+
   blackSwipeWipeWipeWipe() {
     this.blackReveal = this.add.rectangle(
       0,
@@ -4293,6 +4633,7 @@ export class BattleScene extends Scene {
 
     this.blackReveal.setOrigin(0, 1);
     this.blackReveal.setDepth(9999);
+
     this.blackReveal.setScrollFactor(0);
 
     this.tweens.add({
@@ -4307,4 +4648,3 @@ export class BattleScene extends Scene {
     });
   }
 }
-

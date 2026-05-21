@@ -10,147 +10,182 @@ export class InventoryIconOverlay extends Scene {
 
   create() {
     this.inventoryUnlocked = false;
+    this.knowledgeUnlocked = false;
 
-    // makes sure dont check loadGameData all the time
     this.checkTimeThrottle = 0;
 
     this.iconRoot = this.add.container(0, 0);
-
     this.iconRoot.setDepth(999500);
 
-    this.iconRoot.setVisible(false);
+    this.inventoryIcon = this.makeTopRightIcon({
+      x: main_width - 86,
+      y: 70,
+      key: "classroom-bag",
+      size: 64,
+      onClick: () => {
+        const inventoryScene = this.scene.get("InventoryOverlay");
 
-    this.iconImage = this.add.image(main_width - 86, 70, "classroom-bag");
-    this.iconImage.setOrigin(0.5);
+        if (inventoryScene) {
+          inventoryScene.toggleInventory();
+        }
+      },
+    });
 
-    // display ehigth 64px
-    const bagScale = 64 / this.iconImage.height;
-    this.iconImage.setScale(bagScale);
+    this.knowledgeIcon = this.makeTopRightIcon({
+      x: main_width - 176,
+      y: 70,
+      key: "knowledge-brain",
+      size: 64,
+      onClick: () => {
+        const knowledgeScene = this.scene.get("KnowledgeLogOverlay");
 
-    this.iconHit = this.add.zone(main_width - 86, 70, 96, 96);
-    this.iconHit.setOrigin(0.5);
+        if (knowledgeScene) {
+          knowledgeScene.toggle();
+        }
+      },
+    });
 
-    this.iconRoot.add([this.iconImage, this.iconHit]);
+    this.iconRoot.add([
+      this.inventoryIcon.image,
+      this.inventoryIcon.hit,
+      this.knowledgeIcon.image,
+      this.knowledgeIcon.hit,
+    ]);
 
-    this.iconHit.on("pointerover", () => {
-      // no hover effects when hiddedn icon
-      if (!this.iconRoot.visible) {
+    this.checkUnlocks();
+  }
+
+  makeTopRightIcon(config) {
+    const image = this.add.image(config.x, config.y, config.key);
+    image.setOrigin(0.5);
+
+    const iconScale = config.size / image.height;
+    image.setScale(iconScale);
+    image.setVisible(false);
+
+    const hit = this.add.zone(config.x, config.y, 96, 96);
+    hit.setOrigin(0.5);
+    hit.disableInteractive();
+
+    hit.on("pointerover", () => {
+      if (!image.visible) {
         return;
       }
 
-      this.iconImage.setAlpha(0.75);
-
+      image.setAlpha(0.75);
       this.input.setDefaultCursor("pointer");
     });
 
-    this.iconHit.on("pointerout", () => {
-      if (!this.iconRoot.visible) {
+    hit.on("pointerout", () => {
+      if (!image.visible) {
         return;
       }
 
-      this.iconImage.setAlpha(1);
+      image.setAlpha(1);
       this.input.setDefaultCursor("default");
     });
 
-    this.iconHit.on("pointerdown", () => {
-      // doenst work when  not viislbde
-      if (!this.iconRoot.visible) {
+    hit.on("pointerdown", () => {
+      if (!image.visible) {
         return;
       }
 
-      const inventoryScene = this.scene.get("InventoryOverlay");
-
-      // OPEN INVENTORY MENU
-      if (inventoryScene) {
-        inventoryScene.toggleInventory();
+      if (config.onClick) {
+        config.onClick();
       }
     });
 
-    this.checkIfInvUnlock();
+    return {
+      image,
+      hit,
+    };
   }
 
   update(time) {
     if (time - this.checkTimeThrottle > 500) {
       this.checkTimeThrottle = time;
-      this.checkIfInvUnlock();
+      this.checkUnlocks();
     }
 
-    // Visibility depends not only on unlock status, but also on other active scenes.
     this.updVis();
   }
 
-  async checkIfInvUnlock() {
+  async checkUnlocks() {
     try {
       const data = await loadGameData();
 
-      if (data) {
-        if (data.inventoryUnlocked) {
-          this.inventoryUnlocked = true;
-        } else {
-          this.inventoryUnlocked = false;
-        }
-      }
+      this.inventoryUnlocked = !!data.inventoryUnlocked;
+      this.knowledgeUnlocked = !!data.knowledgeLogUnlocked;
     } catch (error) {
       this.inventoryUnlocked = false;
+      this.knowledgeUnlocked = false;
     }
   }
 
   updVis() {
-    let shouldShow = this.inventoryUnlocked;
+    let baseAllowed = true;
 
-    // all scenes on phsaer right now
     const activeScenes = this.scene.manager.getScenes(true);
 
     for (let i = 0; i < activeScenes.length; i += 1) {
-      // tthe scene that you should open it on, and the list of active scenes
-      const key = activeScenes[i].scene.key;
+      const scene = activeScenes[i];
+      const key = scene.scene.key;
 
-      // Hide on scenes where inventory access should not be available.
       if (key === "MainMenu") {
-        shouldShow = false;
+        baseAllowed = false;
       }
 
       if (key === "IntroductionPotion") {
-        shouldShow = false;
+        baseAllowed = false;
       }
 
       if (key === "IdCard") {
-        shouldShow = false;
-      }
-
-      if (key === "PauseMenuOverlay") {
-        const pauseScene = activeScenes[i];
-
-        if (pauseScene.isOpen) {
-          shouldShow = false;
-        }
-      }
-
-      if (key === "SettingsOverlay") {
-        const settingsScene = activeScenes[i];
-
-        if (settingsScene.isOpen) {
-          shouldShow = false;
-        }
+        baseAllowed = false;
       }
 
       if (key === "FightScene") {
-        shouldShow = false;
+        baseAllowed = false;
       }
 
       if (key === "BattleScene") {
-        shouldShow = false;
+        baseAllowed = false;
+      }
+
+      if (key === "PauseMenuOverlay" && scene.isOpen) {
+        baseAllowed = false;
+      }
+
+      if (key === "SettingsOverlay" && scene.isOpen) {
+        baseAllowed = false;
+      }
+
+      if (key === "InventoryOverlay" && scene.isOpen) {
+        baseAllowed = false;
+      }
+
+      if (key === "KnowledgeLogOverlay" && scene.isOpen) {
+        baseAllowed = false;
       }
     }
 
-    this.iconRoot.setVisible(shouldShow);
+    this.setIconVisible(
+      this.inventoryIcon,
+      baseAllowed && this.inventoryUnlocked,
+    );
+    this.setIconVisible(
+      this.knowledgeIcon,
+      baseAllowed && this.knowledgeUnlocked,
+    );
+  }
 
-    if (shouldShow) {
-      this.iconHit.setInteractive({ useHandCursor: false });
+  setIconVisible(icon, visible) {
+    icon.image.setVisible(visible);
+
+    if (visible) {
+      icon.hit.setInteractive({ useHandCursor: false });
     } else {
-      this.iconHit.disableInteractive();
-
-      this.iconImage.setAlpha(1);
+      icon.hit.disableInteractive();
+      icon.image.setAlpha(1);
     }
   }
 }

@@ -12,6 +12,18 @@ import { FightScene } from "./scenes/FightScene";
 import { Classroom } from "./scenes/Classroom";
 import { BattleScene } from "./scenes/BattleScene";
 import { InventoryOverlay } from "./scenes/InventoryOverlay";
+import { PostFirstBattle } from "./scenes/PostFirstBattle";
+import { NewClassroom } from "./scenes/NewClassroom";
+import { PostNewClassroomHallway } from "./scenes/PostNewClassroomHallway";
+import { Stairwell } from "./scenes/Stairwell";
+import { Floor2StartHallway } from "./scenes/Floor2StartHallway";
+import { ReusableLootClassroom } from "./scenes/ReusableLootClassroom";
+import { Floor3StartHallway } from "./scenes/Floor3StartHallway";
+import {
+  Floor4StartHallway,
+  Floor4RestockClassroom,
+} from "./scenes/Floor4StartHallway";
+import { Floor5StartHallway } from "./scenes/Floor5BossHallway";
 
 const GAME_WIDTH = 1600;
 const GAME_HEIGHT = 900;
@@ -48,9 +60,19 @@ export default function StartGame(parent) {
       Classroom,
       InventoryIconOverlay,
       PostClassroomHallway,
+      PostFirstBattle,
       FightScene,
       BattleScene,
       InventoryOverlay,
+      NewClassroom,
+      PostNewClassroomHallway,
+      Stairwell,
+      Floor2StartHallway,
+      ReusableLootClassroom,
+      Floor3StartHallway,
+      Floor4StartHallway,
+      Floor4RestockClassroom,
+      Floor5StartHallway,
     ], // every scene must be laoded here to work
   });
 }

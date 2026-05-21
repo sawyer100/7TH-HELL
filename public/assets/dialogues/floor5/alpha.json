@@ -1,0 +1,15 @@
+{
+  "id": "floor5-alpha",
+  "lines": [
+    {
+      "type": "say",
+      "speaker": "Kim",
+      "text": "That thing is huge, SO TALL."
+    },
+    {
+      "type": "say",
+      "speaker": "Kim",
+      "text": "We have to get through them."
+    }
+  ]
+}

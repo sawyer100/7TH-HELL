@@ -1,0 +1,15 @@
+{
+  "id": "floor2-guard",
+  "lines": [
+    {
+      "type": "say",
+      "speaker": "Kim",
+      "text": "He's dead.. YO WHAT IS THAT WTF??"
+    },
+    {
+      "type": "say",
+      "speaker": "Meryl",
+      "text": "It's HUGE."
+    }
+  ]
+}

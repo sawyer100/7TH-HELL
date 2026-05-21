@@ -22,6 +22,12 @@ export class FightScene extends Scene {
     this.chapterName = "post-classroom-hallway";
     this.enemySetup = [];
 
+    this.battleReturnScene = null;
+    this.battleReturnData = null;
+    
+    this.battleLoseScene = null;
+    this.battleLoseData = null;
+
     if (data) {
       if (data.area) {
         this.area = data.area;
@@ -31,9 +37,24 @@ export class FightScene extends Scene {
         this.chapterName = data.chapterName;
       }
 
-      // the enimies to call
       if (data.enemies) {
         this.enemySetup = data.enemies;
+      }
+
+      if (data.battleReturnScene) {
+        this.battleReturnScene = data.battleReturnScene;
+      }
+
+      if (data.battleReturnData) {
+        this.battleReturnData = data.battleReturnData;
+      }
+
+      if (data.battleLoseScene) {
+        this.battleLoseScene = data.battleLoseScene;
+      }
+
+      if (data.battleLoseData) {
+        this.battleLoseData = data.battleLoseData;
       }
     }
   }
@@ -456,7 +477,6 @@ export class FightScene extends Scene {
 
     this.startBattleBg.setDisplaySize(300, 72);
 
-
     this.startBattleText = this.add.text(0, 0, "START BATTLE", {
       fontFamily: "DogicaBold",
       fontSize: "16px",
@@ -607,6 +627,11 @@ export class FightScene extends Scene {
           area: this.area,
           chapterName: this.chapterName,
           enemies: this.enemySetup,
+
+          battleReturnScene: this.battleReturnScene,
+          battleReturnData: this.battleReturnData,
+          battleLoseScene: this.battleLoseScene,
+          battleLoseData: this.battleLoseData,
         });
       },
     });

@@ -1,0 +1,25 @@
+{
+  "id": "floor3-dombis",
+  "lines": [
+    {
+      "type": "say",
+      "speaker": "Kim",
+      "text": "What is that thing??? Actually massive, is it a zombie?"
+    },
+    {
+      "type": "say",
+      "speaker": "Meryl",
+      "text": "Do NOT get close."
+    },
+    {
+      "type": "say",
+      "speaker": "Kim",
+      "text": "But it's blocking the hallway."
+    },
+    {
+      "type": "say",
+      "speaker": "Meryl",
+      "text": "... Yeah okay, it definitely sees us-"
+    }
+  ]
+}

@@ -1,6 +1,5 @@
 import Phaser from "phaser";
 
-
 export class BattleEffects {
   static play(scene, effectId, targetDisplay, data = {}) {
     if (!targetDisplay || !targetDisplay.root) {
@@ -344,6 +343,238 @@ export class BattleEffects {
             ease: "Quad.In",
             onComplete: () => {
               effect.destroy();
+            },
+          });
+        },
+      });
+
+      return;
+    }
+
+    if (effectId === "brute-charge-crack") {
+      const randomX = Phaser.Math.Between(-22, 22);
+      const randomY = Phaser.Math.Between(-18, 18);
+      const randomAngle = Phaser.Math.Between(-8, 8);
+
+      const effect = scene.add.image(
+        targetDisplay.root.x + randomX,
+        targetDisplay.root.y - 180 + randomY,
+        "effect-brute-crack",
+      );
+
+      effect.setOrigin(0.5);
+      effect.setDepth(710);
+      effect.setAlpha(0);
+      effect.setScale(4);
+      effect.setAngle(randomAngle);
+      effect.setBlendMode(Phaser.BlendModes.SCREEN);
+
+      scene.tweens.add({
+        targets: effect,
+        alpha: 1,
+        scaleX: 10,
+        scaleY: 10,
+        duration: 95,
+        ease: "Back.Out",
+        onComplete: () => {
+          if (data.onImpact) {
+            data.onImpact();
+          }
+
+          scene.cameras.main.shake(90, 0.018);
+
+          effect.setTintFill(0xffffff);
+
+          scene.time.delayedCall(45, () => {
+            effect.clearTint();
+          });
+
+          scene.tweens.add({
+            targets: effect,
+            alpha: 0,
+            scaleX: 8,
+            scaleY: 8,
+            duration: 170,
+            delay: 70,
+            ease: "Quad.In",
+            onComplete: () => {
+              effect.destroy();
+            },
+          });
+        },
+      });
+
+      return;
+    }
+
+    if (effectId === "alpha-long-slap") {
+      const targetX = targetDisplay.root.x;
+      const targetY = targetDisplay.root.y - 190;
+
+      const hand = scene.add.image(
+        targetX,
+        targetDisplay.root.y - 1005,
+        "effect-long-hand",
+      );
+
+      hand.setOrigin(0.5, 0.06);
+      hand.setDepth(720);
+      hand.setAlpha(1);
+      hand.setScale(2.15);
+
+      // Starts almost horizontal on one side.
+      hand.setAngle(82);
+
+      scene.tweens.add({
+        targets: hand,
+        angle: 0,
+        duration: 260,
+        ease: "Sine.In",
+        onComplete: () => {
+          if (data.onImpact) {
+            data.onImpact();
+          }
+
+          scene.cameras.main.shake(105, 0.02);
+
+          const slash = scene.add.image(
+            targetX + Phaser.Math.Between(-18, 18),
+            targetY + Phaser.Math.Between(-12, 12),
+            "effect-alpha-slash",
+          );
+
+          slash.setOrigin(0.5);
+          slash.setDepth(730);
+          slash.setAlpha(0);
+          slash.setScale(4);
+          slash.setAngle(Phaser.Math.Between(-8, 8));
+          slash.setBlendMode(Phaser.BlendModes.NORMAL);
+
+          scene.tweens.add({
+            targets: slash,
+            alpha: 1,
+            scaleX: 10,
+            scaleY: 10,
+            duration: 95,
+            ease: "Back.Out",
+            onComplete: () => {
+              slash.setTintFill(0xffffff);
+
+              scene.time.delayedCall(45, () => {
+                slash.clearTint();
+              });
+
+              scene.tweens.add({
+                targets: slash,
+                alpha: 0,
+                scaleX: 8,
+                scaleY: 8,
+                duration: 170,
+                delay: 70,
+                ease: "Quad.In",
+                onComplete: () => {
+                  slash.destroy();
+                },
+              });
+            },
+          });
+
+          scene.tweens.add({
+            targets: hand,
+            angle: 82,
+            alpha: 0,
+            duration: 240,
+            ease: "Sine.Out",
+            onComplete: () => {
+              hand.destroy();
+            },
+          });
+        },
+      });
+
+      return;
+    }
+    if (effectId === "dombis-spit") {
+      const attackerDisplay = data.attackerDisplay || null;
+
+      let startX = targetDisplay.root.x - 220;
+      let startY = targetDisplay.root.y - 550;
+
+      if (attackerDisplay) {
+        startX = attackerDisplay.root.x;
+        startY = attackerDisplay.root.y - 550;
+      }
+
+      const targetX = targetDisplay.root.x + Phaser.Math.Between(-25, 25);
+      const targetY = targetDisplay.root.y - 210 + Phaser.Math.Between(-20, 20);
+
+      const projectile = scene.add.image(
+        startX,
+        startY,
+        "effect-dombis-projectile",
+      );
+
+      projectile.setOrigin(0.5);
+      projectile.setDepth(720);
+      projectile.setScale(4.4);
+      projectile.setAlpha(1);
+
+      scene.tweens.add({
+        targets: projectile,
+        x: targetX,
+        y: targetY,
+        scaleX: 5.2,
+        scaleY: 5.2,
+        angle: 360,
+        duration: 420,
+        ease: "Cubic.In",
+        onComplete: () => {
+          projectile.destroy();
+
+          if (data.onImpact) {
+            data.onImpact();
+          }
+
+          scene.cameras.main.shake(95, 0.018);
+
+          const splat = scene.add.image(
+            targetX,
+            targetY,
+            "effect-dombis-projectile-splat",
+          );
+
+          splat.setOrigin(0.5);
+          splat.setDepth(725);
+          splat.setScale(2.8);
+          splat.setAlpha(0);
+          splat.setBlendMode(Phaser.BlendModes.SCREEN);
+
+          scene.tweens.add({
+            targets: splat,
+            alpha: 1,
+            scaleX: 7.5,
+            scaleY: 7.5,
+            duration: 95,
+            ease: "Back.Out",
+            onComplete: () => {
+              splat.setTintFill(0xffffff);
+
+              scene.time.delayedCall(45, () => {
+                splat.clearTint();
+              });
+
+              scene.tweens.add({
+                targets: splat,
+                alpha: 0,
+                scaleX: 4.2,
+                scaleY: 4.2,
+                duration: 210,
+                delay: 80,
+                ease: "Quad.In",
+                onComplete: () => {
+                  splat.destroy();
+                },
+              });
             },
           });
         },

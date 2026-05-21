@@ -1,0 +1,51 @@
+{
+  "id": "new-classroom",
+  "lines": [
+    {
+      "type": "say",
+      "speaker": "Kim",
+      "text": "Another classroom."
+    },
+    {
+      "type": "say",
+      "speaker": "Meryl",
+      "text": "Check the bag. Take anything useful."
+    },
+    {
+      "type": "action",
+      "id": "startSearchObjective"
+    }
+  ],
+  "afterBagOpenedLines": [
+    {
+      "type": "say",
+      "speaker": "Kim",
+      "text": "There’s some stuff in here."
+    },
+    {
+      "type": "say",
+      "speaker": "Meryl",
+      "text": "Good. Grab it."
+    },
+    {
+      "type": "action",
+      "id": "startCollectObjective"
+    }
+  ],
+  "afterEverythingCollectedLines": [
+    {
+      "type": "say",
+      "speaker": "Meryl",
+      "text": "That should be everything."
+    },
+    {
+      "type": "say",
+      "speaker": "Kim",
+      "text": "Okay. Let's keep moving."
+    },
+    {
+      "type": "action",
+      "id": "startLeaveObjective"
+    }
+  ]
+}

@@ -22,10 +22,12 @@ export class PostClassroomHallway extends Scene {
   create() {
     this.game.canvas.style.cursor = "default";
     this.studentRunCount = 0;
+
     this.schoolAlarmStarted = false;
 
     this.bg = this.add.rectangle(0, 0, main_width, main_height, 0x000000, 1);
     this.bg.setOrigin(0, 0);
+
     this.bg.setDepth(-20);
 
     this.topCinemaBorder = this.add.rectangle(
@@ -52,6 +54,7 @@ export class PostClassroomHallway extends Scene {
 
     this.background = this.add.image(main_width / 2, 110, "id-card-background");
     this.background.setOrigin(0.5, 0);
+
     this.background.setDepth(1);
     this.background.setScale(main_width / this.background.width);
 
@@ -68,12 +71,15 @@ export class PostClassroomHallway extends Scene {
 
     this.door = this.add.image(
       this.background.x - 400,
+
       this.background.y + 70,
       "id-card-door-open",
     );
 
     this.door.setOrigin(this.background.originX, this.background.originY);
+
     this.door.setDepth(10);
+
     this.door.setScale((main_width / this.background.width) * 1.037);
 
     this.locker = this.add.image(
@@ -82,28 +88,34 @@ export class PostClassroomHallway extends Scene {
       "id-card-locker",
     );
     this.locker.setOrigin(0.5, 1);
-    this.locker.setDepth(11);
-    this.locker.setScale(335 / this.locker.height);
 
     this.kim = this.add.image(bgLeft + 585, this.floorY + 8, "id-card-kim");
     this.kim.setOrigin(0.5, 1);
-    this.kim.setDepth(20);
+
     this.kim.setScale(335 / this.kim.height);
+    this.kim.setDepth(20);
+
+    this.locker.setDepth(11);
 
     this.meryl = this.add.image(bgLeft + 755, this.floorY + 8, "id-card-meryl");
-    this.meryl.setOrigin(0.5, 1);
     this.meryl.setDepth(20);
+
     this.meryl.setScale(335 / this.meryl.height);
 
-    // Starts facing right, like it has not noticed Kim and Meryl yet.
+    this.locker.setScale(335 / this.locker.height);
+
+    this.meryl.setOrigin(0.5, 1);
+
     this.zombie = this.add.image(
       bgLeft + 1230,
       this.floorY + 8,
-      "knowledge-walker-right",
+      "knowledge-walker-right", //s tarts facing right tho
     );
     this.zombie.setOrigin(0.5, 1);
+
     this.zombie.setDepth(19);
     this.zombie.setScale(360 / this.zombie.height);
+
     this.zombie.setTint(0x88ff88);
 
     this.agroIcon = this.add.image(
@@ -113,12 +125,15 @@ export class PostClassroomHallway extends Scene {
     );
     this.agroIcon.setOrigin(0.5);
     this.agroIcon.setDepth(3100);
+
     this.agroIcon.setAlpha(0);
     this.agroIcon.setVisible(false);
+
     this.agroIcon.setScale(90 / this.agroIcon.height);
 
     this.pauseButton = this.add.image(88, 68, "pause-button");
     this.pauseButton.setOrigin(0.5);
+
     this.pauseButton.setDepth(3100);
 
     const pauseScale = Math.min(
@@ -127,6 +142,7 @@ export class PostClassroomHallway extends Scene {
     );
 
     this.pauseButton.setScale(pauseScale);
+
     this.pauseButton.setInteractive({ useHandCursor: false });
 
     this.pauseButton.on("pointerover", () => {
@@ -151,6 +167,7 @@ export class PostClassroomHallway extends Scene {
 
     this.dialogueBox.setOrigin(0.5, 1);
     this.dialogueBox.setDepth(3000);
+
     this.dialogueBox.setScale(1470 / this.dialogueBox.width);
 
     this.startSchoolAlarm();
@@ -207,7 +224,7 @@ export class PostClassroomHallway extends Scene {
       },
 
       onDone: () => {
-        console.log("Post-classroom hallway dialogue finished.");
+        console.log("CRQAZY OMG NICE JOB");
       },
     });
 
@@ -223,6 +240,7 @@ export class PostClassroomHallway extends Scene {
     );
 
     this.entryBlack.setOrigin(0, 0);
+
     this.entryBlack.setDepth(999999);
     this.entryBlack.setAlpha(1);
 
@@ -255,6 +273,7 @@ export class PostClassroomHallway extends Scene {
 
       if (this.dialogue) {
         this.dialogue.destroy();
+
         this.dialogue = null;
       }
     });
@@ -293,22 +312,25 @@ export class PostClassroomHallway extends Scene {
     this.makeSmoothAlarmTexture();
 
     const screen = Phaser.BlendModes.SCREEN;
-
     const smooth = this.add.image(x, y, "smooth-alarm-red");
     smooth.setOrigin(0.5);
+
     smooth.setDepth(1500);
     smooth.setBlendMode(screen);
     smooth.setAlpha(0);
+
     smooth.setVisible(false);
 
     const pixel = this.add.image(x, y - 6, "alarm-pixel");
     pixel.setOrigin(0.5);
     pixel.setDepth(1501);
     pixel.setBlendMode(screen);
+
     pixel.setAlpha(0);
     pixel.setVisible(false);
 
     const smoothBaseScale = smoothSize / smooth.width;
+
     const pixelBaseScale = pixelSize / pixel.width;
 
     smooth.setScale(smoothBaseScale);
@@ -342,6 +364,7 @@ export class PostClassroomHallway extends Scene {
     this.OVERLAYlockdown.setOrigin(0, 0);
     this.OVERLAYlockdown.setDepth(1000);
     this.OVERLAYlockdown.setAlpha(0.72);
+
     this.OVERLAYlockdown.setBlendMode(Phaser.BlendModes.MULTIPLY);
 
     this.LOCKDOWNRedCircleStuff = this.add.rectangle(
@@ -355,9 +378,12 @@ export class PostClassroomHallway extends Scene {
 
     this.LOCKDOWNRedCircleStuff.setOrigin(0, 0);
     this.LOCKDOWNRedCircleStuff.setDepth(1001);
+
     this.LOCKDOWNRedCircleStuff.setAlpha(0.08);
+
     this.LOCKDOWNRedCircleStuff.setBlendMode(Phaser.BlendModes.SCREEN);
 
+    // we can stop all of hthem easily later isntead of manualy doing it, we will put them in []
     this.schoolAlarmTweens.push(
       this.tweens.add({
         targets: this.LOCKDOWNRedCircleStuff,
@@ -373,12 +399,14 @@ export class PostClassroomHallway extends Scene {
     );
 
     this.leftAlarm = this.makeAlarmSide(105, 125, 1250, 780);
+
     this.rightAlarm = this.makeAlarmSide(main_width - 105, 125, 1250, 780);
 
     [this.leftAlarm, this.rightAlarm].forEach((alarm) => {
       alarm.smooth.setVisible(true);
       alarm.pixel.setVisible(true);
 
+      // same here
       this.schoolAlarmTweens.push(
         this.tweens.add({
           targets: alarm.smooth,
@@ -436,6 +464,7 @@ export class PostClassroomHallway extends Scene {
           targets: this.zombie,
           x: this.zombie.x - 50,
           duration: 120,
+
           yoyo: true,
           repeat: 2,
           ease: "Sine.InOut",
@@ -449,9 +478,10 @@ export class PostClassroomHallway extends Scene {
       );
 
       this.agroIcon.setVisible(true);
-      this.agroIcon.setAlpha(0);
-      this.agroIcon.setScale(0.2);
 
+      this.agroIcon.setAlpha(0);
+
+      this.agroIcon.setScale(0.2);
       await new Promise((resolve) => {
         this.tweens.add({
           targets: this.agroIcon,
@@ -483,8 +513,8 @@ export class PostClassroomHallway extends Scene {
       0x000000,
       1,
     );
-
     blackScreen.setOrigin(0, 0);
+
     blackScreen.setDepth(999999);
     blackScreen.setAlpha(0);
 
@@ -494,18 +524,19 @@ export class PostClassroomHallway extends Scene {
         alpha: 1,
         duration: 650,
         ease: "Cubic.In",
+
         onComplete: resolve,
       });
     });
 
     this.input.setDefaultCursor("default");
-
     if (this.game) {
       if (this.game.canvas) {
         this.game.canvas.style.cursor = "default";
       }
     }
 
+    // start fight with 2 zombies
     this.scene.start("FightScene", {
       area: "post-classroom-hallway",
       chapterName: "post-classroom-hallway",

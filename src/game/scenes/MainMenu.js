@@ -155,6 +155,46 @@ export class MainMenu extends Scene {
     super("MainMenu");
   }
 
+  isNewClassroomFullyLooted(gameData) {
+    if (!gameData) {
+      return false;
+    }
+
+    if (!gameData.newClassroom) {
+      return false;
+    }
+
+    if (!gameData.newClassroom.lootBag1Opened) {
+      return false;
+    }
+
+    if (!gameData.newClassroom.lootBag2Opened) {
+      return false;
+    }
+
+    if (!gameData.newClassroom.helmetCollected) {
+      return false;
+    }
+
+    if (!Array.isArray(gameData.newClassroom.lootDrops)) {
+      return false;
+    }
+
+    if (gameData.newClassroom.lootDrops.length === 0) {
+      return false;
+    }
+
+    const theallcollectomg = gameData.newClassroom.lootDrops.every((drop) => {
+      return drop.collected;
+    });
+
+    if (!theallcollectomg) {
+      return false;
+    }
+
+    return true;
+  }
+
   async startGameFromSave() {
     if (this.middleOfTrans) return;
 
@@ -210,8 +250,139 @@ export class MainMenu extends Scene {
       return;
     }
 
-    // Later, more chapter routing goes here.
-    // For now, everything starts introduction-potion.
+    if (chapterName === "post-first-battle") {
+      this.input.setDefaultCursor("default");
+
+      if (this.game && this.game.canvas) {
+        this.game.canvas.style.cursor = "default";
+      }
+
+      if (this.isNewClassroomFullyLooted(gameData)) {
+        this.scene.start("PostNewClassroomHallway");
+      } else {
+        this.scene.start("PostFirstBattle");
+      }
+
+      this.scene.bringToTop("KnowledgeLogOverlay");
+      this.scene.bringToTop("PauseMenuOverlay");
+      this.scene.bringToTop("SettingsOverlay");
+      this.scene.bringToTop("InventoryIconOverlay");
+      this.scene.bringToTop("InventoryOverlay");
+
+      return;
+    }
+
+    if (chapterName === "new-classroom") {
+      this.input.setDefaultCursor("default");
+
+      if (this.game && this.game.canvas) {
+        this.game.canvas.style.cursor = "default";
+      }
+
+      if (this.isNewClassroomFullyLooted(gameData)) {
+        this.scene.start("PostNewClassroomHallway");
+      } else {
+        this.scene.start("PostFirstBattle");
+      }
+
+      this.scene.bringToTop("KnowledgeLogOverlay");
+      this.scene.bringToTop("PauseMenuOverlay");
+      this.scene.bringToTop("SettingsOverlay");
+      this.scene.bringToTop("InventoryIconOverlay");
+      this.scene.bringToTop("InventoryOverlay");
+
+      return;
+    }
+
+    if (chapterName === "post-new-classroom-hallway") {
+      this.input.setDefaultCursor("default");
+
+      if (this.game && this.game.canvas) {
+        this.game.canvas.style.cursor = "default";
+      }
+
+      this.scene.start("PostNewClassroomHallway");
+
+      this.scene.bringToTop("KnowledgeLogOverlay");
+      this.scene.bringToTop("PauseMenuOverlay");
+      this.scene.bringToTop("SettingsOverlay");
+      this.scene.bringToTop("InventoryIconOverlay");
+      this.scene.bringToTop("InventoryOverlay");
+
+      return;
+    }
+
+    if (chapterName === "floor2-starthallway") {
+      this.input.setDefaultCursor("default");
+
+      if (this.game && this.game.canvas) {
+        this.game.canvas.style.cursor = "default";
+      }
+
+      this.scene.start("Floor2StartHallway");
+
+      this.scene.bringToTop("KnowledgeLogOverlay");
+      this.scene.bringToTop("PauseMenuOverlay");
+      this.scene.bringToTop("SettingsOverlay");
+      this.scene.bringToTop("InventoryIconOverlay");
+      this.scene.bringToTop("InventoryOverlay");
+
+      return;
+    }
+    if (chapterName === "floor3-starthallway") {
+      this.input.setDefaultCursor("default");
+
+      if (this.game && this.game.canvas) {
+        this.game.canvas.style.cursor = "default";
+      }
+
+      this.scene.start("Floor3StartHallway");
+
+      this.scene.bringToTop("KnowledgeLogOverlay");
+      this.scene.bringToTop("PauseMenuOverlay");
+      this.scene.bringToTop("SettingsOverlay");
+      this.scene.bringToTop("InventoryIconOverlay");
+      this.scene.bringToTop("InventoryOverlay");
+
+      return;
+    }
+
+    if (chapterName === "floor4-starthallway") {
+      this.input.setDefaultCursor("default");
+
+      if (this.game && this.game.canvas) {
+        this.game.canvas.style.cursor = "default";
+      }
+
+      this.scene.start("Floor4StartHallway");
+
+      this.scene.bringToTop("KnowledgeLogOverlay");
+      this.scene.bringToTop("PauseMenuOverlay");
+      this.scene.bringToTop("SettingsOverlay");
+      this.scene.bringToTop("InventoryIconOverlay");
+      this.scene.bringToTop("InventoryOverlay");
+
+      return;
+    }
+
+    if (chapterName === "floor-5-boss") {
+      this.input.setDefaultCursor("default");
+
+      if (this.game && this.game.canvas) {
+        this.game.canvas.style.cursor = "default";
+      }
+
+      this.scene.start("Floor5StartHallway");
+
+      this.scene.bringToTop("KnowledgeLogOverlay");
+      this.scene.bringToTop("PauseMenuOverlay");
+      this.scene.bringToTop("SettingsOverlay");
+      this.scene.bringToTop("InventoryIconOverlay");
+      this.scene.bringToTop("InventoryOverlay");
+
+      return;
+    }
+
     this.scene.start("IntroductionPotion");
     this.scene.bringToTop("KnowledgeLogOverlay");
     this.scene.bringToTop("PauseMenuOverlay");

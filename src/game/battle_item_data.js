@@ -163,10 +163,10 @@ export const battleConsumables = {
     id: "energy_bar",
     name: "ENERGY BAR",
     icon: "item-energy-bar",
-    description: "Restores 35 stamina. Uses the turn.",
+    description: "Restores 40% stamina. Uses the turn.",
     target: "ally",
     heal: 0,
-    staminaRecover: 35,
+    staminaRecoverPercent: 0.15,
     effectId: "stamina",
   },
 

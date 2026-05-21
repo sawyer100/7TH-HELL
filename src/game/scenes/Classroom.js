@@ -34,51 +34,54 @@ export class Classroom extends Scene {
     this.bg.setOrigin(0, 0);
     this.bg.setDepth(-20);
 
-    // palce holder because we dont have classroom background rn
-    this.roomX = 420;
+    // Classroom background. The image key must already be loaded as
+    // "classroom-new-background" before this scene starts.
     this.roomY = 0;
-
-    this.roomW = 760;
     this.roomH = main_height;
-    this.roomBg = this.add.rectangle(
+
+    const roomTexture = this.textures.get("classroom-new-background");
+    const roomSource = roomTexture.getSourceImage();
+    this.roomNativeW = roomSource.width;
+    this.roomNativeH = roomSource.height;
+
+    const roomScale = this.roomH / this.roomNativeH;
+    this.roomW = this.roomNativeW * roomScale;
+    this.roomX = (main_width - this.roomW) / 2;
+
+    this.roomBg = this.add.image(
       this.roomX,
       this.roomY,
-      this.roomW,
-      this.roomH,
-      0x8b0000,
-      1,
+      "classroom-new-background",
     );
 
     this.roomBg.setOrigin(0, 0);
-
+    this.roomBg.setScale(roomScale);
     this.roomBg.setDepth(1);
 
-    // temporarry door
-    this.doorX = this.roomX + this.roomW - 130;
-    this.doorY = 70;
+    this.roomScaleX = this.roomBg.displayWidth / this.roomNativeW;
+    this.roomScaleY = this.roomBg.displayHeight / this.roomNativeH;
+
+    // Invisible door trigger on the top-right side of the room. It is slightly
+    // below the top wall so Kim can reach it without walking into the wall.
+    const doorPoint = this.nativeToWorld(350, 96);
+    this.doorX = doorPoint.x;
+    this.doorY = doorPoint.y;
+    this.doorBounds = this.nativeRectToWorld(318, 82, 56, 45);
 
     this.doorTarget = this.add.rectangle(
       this.doorX,
       this.doorY,
-      190,
-      95,
-      0x3b0000,
-      1,
+      this.doorBounds.width,
+      this.doorBounds.height,
+      0x00ff00,
+      0,
     );
 
     this.doorTarget.setOrigin(0.5);
     this.doorTarget.setDepth(2);
+    this.doorTarget.setVisible(false);
 
-    this.doorLabel = this.add.text(this.doorX, this.doorY, "DOOR", {
-      fontFamily: "DogicaBold",
-      fontSize: "18px",
-      color: "#ffffff",
-      stroke: "#000000",
-      strokeThickness: 4,
-    });
-
-    this.doorLabel.setOrigin(0.5);
-    this.doorLabel.setDepth(3);
+    this.setupClassroomCollision();
 
     this.objectiveHeader = this.add.text(main_width / 2, 32, "", {
       fontFamily: "DogicaBold",
@@ -125,11 +128,8 @@ export class Classroom extends Scene {
       this.openPauseMenu();
     });
 
-    this.kim = this.add.image(
-      this.roomX + this.roomW / 2,
-      main_height - 190,
-      "id-card-kim",
-    );
+    const kimStart = this.nativeToWorld(136, 342);
+    this.kim = this.add.image(kimStart.x, kimStart.y, "id-card-kim");
 
     this.kim.setOrigin(0.5, 1);
 
@@ -138,7 +138,8 @@ export class Classroom extends Scene {
     // const kimScale = 250 / this.kim.height;
     this.kim.setScale(250 / this.kim.height);
 
-    this.meryl = this.add.image(this.doorX - 105, 165, "id-card-meryl");
+    const merylStart = this.nativeToWorld(340, 116);
+    this.meryl = this.add.image(merylStart.x, merylStart.y, "id-card-meryl");
     this.meryl.setOrigin(0.5, 1);
 
     this.meryl.setDepth(20);
@@ -147,12 +148,9 @@ export class Classroom extends Scene {
 
     this.meryl.setScale(250 / this.meryl.height);
 
-    // Bag in the corner of the room.
-    this.bag = this.add.image(
-      this.roomX + 120,
-      main_height - 135,
-      "classroom-bag",
-    );
+    // Bag in the bottom-left corner of the room.
+    const bagStart = this.nativeToWorld(28, 350);
+    this.bag = this.add.image(bagStart.x, bagStart.y, "classroom-bag");
 
     this.bag.setOrigin(0.5, 1);
     this.bag.setDepth(15);
@@ -160,18 +158,7 @@ export class Classroom extends Scene {
     const bagScale = 120 / this.bag.height;
     this.bag.setScale(bagScale);
 
-    this.interactPrompt = this.add.text(this.bag.x, this.bag.y - 150, "E", {
-      fontFamily: "DogicaBold",
-      fontSize: "28px",
-      color: "#ffffff",
-      stroke: "#000000",
-      strokeThickness: 6,
-    });
-
-    this.interactPrompt.setOrigin(0.5);
-
-    this.interactPrompt.setDepth(3300);
-    this.interactPrompt.setVisible(false);
+    this.createInteractionPrompt();
 
     // WASD KEYB INDS
     this.wKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
@@ -269,22 +256,77 @@ export class Classroom extends Scene {
     });
   }
 
+  createInteractionPrompt() {
+    this.interactPromptRoot = this.add.container(0, 0);
+    this.interactPromptRoot.setDepth(3300);
+    this.interactPromptRoot.setVisible(false);
+
+    this.interactPromptKeyText = this.add.text(0, 0, "E TO PICK UP", {
+      fontFamily: "DogicaBold",
+      fontSize: "25px",
+      color: "#ffffff",
+      stroke: "#000000",
+      strokeThickness: 6,
+      align: "center",
+    });
+
+    this.interactPromptKeyText.setOrigin(0.5);
+
+    this.interactPromptNameText = this.add.text(0, 37, "", {
+      fontFamily: "DogicaBold",
+      fontSize: "15px",
+      color: "#ffffff",
+      stroke: "#000000",
+      strokeThickness: 5,
+      align: "center",
+    });
+
+    this.interactPromptNameText.setOrigin(0.5);
+
+    this.interactPromptRoot.add([
+      this.interactPromptKeyText,
+      this.interactPromptNameText,
+    ]);
+  }
+
+  showInteractionPrompt(x, y, label) {
+    if (!this.interactPromptRoot) {
+      return;
+    }
+
+    this.interactPromptRoot.setPosition(x, y);
+
+    if (label) {
+      this.interactPromptNameText.setText(label);
+    } else {
+      this.interactPromptNameText.setText("");
+    }
+
+    this.interactPromptRoot.setVisible(true);
+  }
+
+  hideInteractionPrompt() {
+    if (this.interactPromptRoot) {
+      this.interactPromptRoot.setVisible(false);
+    }
+  }
+
   update(time, delta) {
     this.updateDialoguePortrait();
 
     /// sopt input fomr gamapely
     if (this.dialogueActive) {
-      this.interactPrompt.setVisible(false);
+      this.hideInteractionPrompt();
       return;
     }
 
     if (!this.canMove) {
-      this.interactPrompt.setVisible(false);
+      this.hideInteractionPrompt();
       return;
     }
 
     if (this.collectingBag) {
-      this.interactPrompt.setVisible(false);
+      this.hideInteractionPrompt();
       return;
     }
 
@@ -293,6 +335,90 @@ export class Classroom extends Scene {
 
     this.updateBagInteraction();
     this.updateDoorLeave();
+  }
+
+  nativeToWorld(nativeX, nativeY) {
+    return {
+      x: this.roomX + nativeX * this.roomScaleX,
+      y: this.roomY + nativeY * this.roomScaleY,
+    };
+  }
+
+  nativeRectToWorld(nativeX, nativeY, nativeW, nativeH) {
+    const point = this.nativeToWorld(nativeX, nativeY);
+
+    return new Phaser.Geom.Rectangle(
+      point.x,
+      point.y,
+      nativeW * this.roomScaleX,
+      nativeH * this.roomScaleY,
+    );
+  }
+
+  setupClassroomCollision() {
+    // 380x360
+    this.walkBounds = this.nativeRectToWorld(10, 82, 360, 274);
+
+    const deskRects = [
+      // top row
+      { x: 45, y: 120, w: 68, h: 65 },
+      { x: 155, y: 120, w: 68, h: 65 },
+      { x: 274, y: 120, w: 68, h: 65 },
+
+      { x: 45, y: 201, w: 68, h: 55 },
+      { x: 155, y: 201, w: 68, h: 55 },
+      { x: 274, y: 201, w: 68, h: 55 },
+
+      // botto
+      { x: 45, y: 279, w: 68, h: 65 },
+      { x: 155, y: 279, w: 68, h: 65 },
+      { x: 274, y: 279, w: 68, h: 65 },
+    ];
+
+    this.solidAreas = deskRects.map((rect) => {
+      return this.nativeRectToWorld(rect.x, rect.y, rect.w, rect.h);
+    });
+
+  }
+
+  getKimFeetBounds(x, y) {
+    const footWidth = 46;
+    const footHeight = 24;
+
+    return new Phaser.Geom.Rectangle(
+      x - footWidth / 2,
+      y - footHeight,
+      footWidth,
+      footHeight,
+    );
+  }
+
+  isKimBlockedAt(x, y) {
+    const feet = this.getKimFeetBounds(x, y);
+
+    if (feet.left < this.walkBounds.left) {
+      return true;
+    }
+
+    if (feet.right > this.walkBounds.right) {
+      return true;
+    }
+
+    if (feet.top < this.walkBounds.top) {
+      return true;
+    }
+
+    if (feet.bottom > this.walkBounds.bottom) {
+      return true;
+    }
+
+    for (const rect of this.solidAreas) {
+      if (Phaser.Geom.Intersects.RectangleToRectangle(feet, rect)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   charmoving(delta) {
@@ -325,24 +451,26 @@ export class Classroom extends Scene {
       }
     }
 
+    const oldX = this.kim.x;
+    
+    const oldY = this.kim.y;
+
     this.kim.x += dx * speed * dt;
+
+    if (this.isKimBlockedAt(this.kim.x, this.kim.y)) {
+      this.kim.x = oldX;
+    }
 
     this.kim.y += dy * speed * dt;
 
-    const minX = this.roomX + 55;
-    const maxX = this.roomX + this.roomW - 55;
-
-    const minY = 115;
-
-    const maxY = main_height - 105;
-
-    this.kim.x = Phaser.Math.Clamp(this.kim.x, minX, maxX);
-
-    this.kim.y = Phaser.Math.Clamp(this.kim.y, minY, maxY);
+    if (this.isKimBlockedAt(this.kim.x, this.kim.y)) {
+      this.kim.y = oldY;
+    }
   }
+
   updateBagInteraction() {
     if (this.objectiveMode !== "findBag") {
-      this.interactPrompt.setVisible(false);
+      this.hideInteractionPrompt();
       return;
     }
 
@@ -353,14 +481,16 @@ export class Classroom extends Scene {
       this.bag.y,
     );
 
-    const closeEnoughLol = dist < 120;
+    const ss = dist < 120;
+    if (!ss) {
+      this.hideInteractionPrompt();
+      return;
+    }
 
-    this.interactPrompt.setVisible(closeEnoughLol);
+    this.showInteractionPrompt(this.bag.x, this.bag.y - 170, "Kim's Backpack");
 
-    if (closeEnoughLol) {
-      if (Phaser.Input.Keyboard.JustDown(this.eKey)) {
-        this.collectBag();
-      }
+    if (Phaser.Input.Keyboard.JustDown(this.eKey)) {
+      this.collectBag();
     }
   }
 
@@ -376,12 +506,12 @@ export class Classroom extends Scene {
 
     let nearDoor = false;
 
-    if (this.kim.y < 145) {
-      if (this.kim.x > this.doorX - 130) {
-        if (this.kim.x < this.doorX + 130) {
-          nearDoor = true;
-        }
-      }
+    if (this.doorBounds) {
+      nearDoor = Phaser.Geom.Rectangle.Contains(
+        this.doorBounds,
+        this.kim.x,
+        this.kim.y,
+      );
     }
 
     if (!nearDoor) {
@@ -642,7 +772,7 @@ export class Classroom extends Scene {
     this.collectingBag = true;
 
     this.canMove = false;
-    this.interactPrompt.setVisible(false);
+    this.hideInteractionPrompt();
 
     if (this.bag) {
       this.bag.setVisible(false);
@@ -713,7 +843,6 @@ export class Classroom extends Scene {
       blocker.setDepth(9990);
       blocker.setAlpha(0);
 
-      // Inventory unlocked image.
       const unlocked = this.add.image(
         main_width / 2,
         main_height / 2,

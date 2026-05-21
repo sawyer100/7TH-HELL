@@ -51,7 +51,13 @@ export async function resetForFirstBattleDefeat() {
   const updatedGameData = {
     ...gameData,
 
+    knowledgeLogUnlocked: false,
     inventoryUnlocked: false,
+    encounteredEnemies: [],
+    firstBattleWon: false,
+    firstBattleLootDrops: null,
+    firstBattleLootCollected: false,
+    knowledgeUnlockPopupSeen: false,
 
     currentStoryState: {
       ...(gameData.currentStoryState || {}),
@@ -94,6 +100,12 @@ export const default_game_data = {
   // there are set characters
   // this is the default data so kim should be here
   encounteredEnemies: [],
+
+  firstBattleWon: false,
+  firstBattleLootDrops: null,
+  firstBattleLootCollected: false,
+  knowledgeUnlockPopupSeen: false,
+
   inventory: getDefaultInventory(),
 };
 
@@ -258,6 +270,39 @@ export async function setCurrentChapterName(chapterName) {
       chapterName,
       chapterObjective: null,
       checkPoint: null,
+    },
+  };
+
+  return await saveGameData(updatedGameData);
+}
+
+export async function recordFirstBattleWin() {
+  const gameData = await loadGameData();
+
+  let encounteredEnemies = [];
+
+  if (Array.isArray(gameData.encounteredEnemies)) {
+    encounteredEnemies = [...gameData.encounteredEnemies];
+  }
+
+  if (!encounteredEnemies.includes("walker")) {
+    encounteredEnemies.push("walker");
+  }
+
+  const updatedGameData = {
+    ...gameData,
+    inventoryUnlocked: true,
+    knowledgeLogUnlocked: true,
+    encounteredEnemies,
+    firstBattleWon: true,
+    firstBattleLootCollected: gameData.firstBattleLootCollected || false,
+    knowledgeUnlockPopupSeen: gameData.knowledgeUnlockPopupSeen || false,
+
+    currentStoryState: {
+      ...(gameData.currentStoryState || {}),
+      chapterName: "post-first-battle",
+      chapterObjective: null,
+      checkPoint: "post-first-battle",
     },
   };
 
