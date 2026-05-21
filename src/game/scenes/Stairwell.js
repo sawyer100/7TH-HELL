@@ -199,8 +199,6 @@ export class Stairwell extends Scene {
 
     this.floorTwoEnterX = this.floorTwoDoor.x;
     this.floorTwoEnterY = this.floorTwoDoor.y;
-
-    this.drawDebugStairPath();
   }
 
   createPauseButton() {
@@ -305,7 +303,6 @@ export class Stairwell extends Scene {
 
     this.interactPromptNameText.setText(label);
     this.interactPromptRoot.setVisible(true);
-
   }
 
   hideInteractionPrompt() {
@@ -409,7 +406,6 @@ export class Stairwell extends Scene {
     }
   }
 
-
   getPointOnCurrentPathSegment() {
     const start = this.pathNodes[this.walkSegment];
     const end = this.pathNodes[this.walkSegment + 1];
@@ -420,7 +416,6 @@ export class Stairwell extends Scene {
       y: Phaser.Math.Linear(start.y, end.y, this.walkT),
     };
   }
-
 
   getPathEndsForCurrentSegment() {
     if (this.pathSegment === "START_TO_A") {
@@ -638,14 +633,12 @@ export class Stairwell extends Scene {
             });
           });
         },
-
       });
     });
   }
 
   async enterFloorTwo() {
     if (!this.scene.manager.keys[this.nextScene]) {
-
       console.warn(`Scene ${this.nextScene} does not exist yet.`);
       this.canMove = true;
       return;
@@ -661,7 +654,6 @@ export class Stairwell extends Scene {
 
     this.scene.bringToTop("KnowledgeLogOverlay");
     this.scene.bringToTop("PauseMenuOverlay");
-
 
     this.scene.bringToTop("SettingsOverlay");
     this.scene.bringToTop("InventoryIconOverlay");
